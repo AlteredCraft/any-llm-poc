@@ -1,0 +1,6 @@
+# any-llm with all providers
+any-llm-sdk[all]>=1.0.0
+
+# Additional dependencies for the CLI
+python-dotenv>=1.0.0
+rich>=13.7.0
