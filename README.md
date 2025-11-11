@@ -24,7 +24,9 @@ Key features:
 ```
 any-llm-poc/
 ├── chat.py                           # Main interactive CLI chat application
-├── requirements.txt                   # Python dependencies
+├── pyproject.toml                    # Project metadata and dependencies (uv)
+├── requirements.txt                   # Python dependencies (pip fallback)
+├── .python-version                   # Python version for uv
 ├── .env.example                      # Example environment variables
 ├── examples/
 │   ├── 01_basic_comparison.py        # Compare same prompt across models
@@ -36,6 +38,10 @@ any-llm-poc/
 
 ## Setup
 
+### Prerequisites
+
+This project requires Python 3.11 or higher.
+
 ### 1. Clone and Navigate
 
 ```bash
@@ -45,11 +51,53 @@ cd any-llm-poc
 
 ### 2. Install Dependencies
 
+#### Option A: Using uv (Recommended - Fast!)
+
+[uv](https://github.com/astral-sh/uv) is an extremely fast Python package installer and resolver.
+
+Install uv if you haven't already:
 ```bash
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or with pip
+pip install uv
+```
+
+Create virtual environment and install dependencies:
+```bash
+# Create venv and install dependencies in one command
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+uv pip install -e .
+```
+
+Or use uv's shorthand:
+```bash
+# Run without activating venv
+uv run python chat.py
+
+# Or sync dependencies and create venv automatically
+uv sync
+```
+
+#### Option B: Using pip (Traditional)
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-This installs:
+**Dependencies installed:**
 - `any-llm-sdk[all]` - The any-llm library with all provider support
 - `python-dotenv` - For environment variable management
 - `rich` - For beautiful terminal output
@@ -72,6 +120,18 @@ MISTRAL_API_KEY=...
 
 **Note:** You don't need all API keys - only for the providers you want to test.
 
+### Why uv?
+
+[uv](https://github.com/astral-sh/uv) is **10-100x faster** than pip for package installation and resolution. Key benefits:
+
+- ⚡ **Blazing fast** - Written in Rust, installs packages in milliseconds
+- 🔒 **Reliable** - Better dependency resolution than pip
+- 🎯 **Modern** - Built for Python 3.11+ with full PEP 621 support
+- 🛠️ **Convenient** - `uv run` lets you run scripts without activating venv
+- 🔄 **Compatible** - Works with existing pip, virtualenv, and pyproject.toml
+
+For this project, uv makes setup and running examples much faster!
+
 ## Usage
 
 ### Main Chat Application
@@ -79,6 +139,10 @@ MISTRAL_API_KEY=...
 Run the interactive chat app:
 
 ```bash
+# With uv (if not in activated venv)
+uv run python chat.py
+
+# Or with activated venv (uv or pip)
 python chat.py
 ```
 
@@ -103,6 +167,10 @@ Available commands in chat:
 Test the same prompt across different models:
 
 ```bash
+# With uv
+uv run python examples/01_basic_comparison.py
+
+# Or with activated venv
 python examples/01_basic_comparison.py
 ```
 
@@ -113,7 +181,7 @@ python examples/01_basic_comparison.py
 Compare streaming performance:
 
 ```bash
-python examples/02_streaming_comparison.py
+uv run python examples/02_streaming_comparison.py
 ```
 
 **What it demonstrates:**
@@ -126,7 +194,7 @@ python examples/02_streaming_comparison.py
 Test function calling across providers:
 
 ```bash
-python examples/03_tool_calling.py
+uv run python examples/03_tool_calling.py
 ```
 
 **What it demonstrates:**
@@ -139,7 +207,7 @@ python examples/03_tool_calling.py
 Test which features work with which models:
 
 ```bash
-python examples/04_capability_matrix.py
+uv run python examples/04_capability_matrix.py
 ```
 
 **What it demonstrates:**
@@ -374,6 +442,40 @@ if response.choices[0].message.tool_calls:
     print(final.choices[0].message.content)
 ```
 
+## Quick Reference: uv Commands
+
+Common uv commands for this project:
+
+```bash
+# Install dependencies
+uv pip install -e .
+
+# Run a script without activating venv
+uv run python chat.py
+uv run python examples/01_basic_comparison.py
+
+# Create/recreate virtual environment
+uv venv
+uv venv --python 3.11
+
+# Sync dependencies (reads pyproject.toml)
+uv sync
+
+# Add a new dependency
+uv pip install <package-name>
+
+# Update dependencies
+uv pip install --upgrade <package-name>
+
+# List installed packages
+uv pip list
+
+# Show dependency tree
+uv pip tree
+```
+
+For more details, see [uv documentation](https://github.com/astral-sh/uv).
+
 ## Next Steps
 
 To extend this POC:
@@ -387,10 +489,16 @@ To extend this POC:
 
 ## Resources
 
+### any-llm
 - [any-llm GitHub](https://github.com/mozilla-ai/any-llm)
 - [any-llm Documentation](https://mozilla-ai.github.io/any-llm/)
 - [Mozilla.ai Blog: Introducing any-llm](https://blog.mozilla.ai/introducing-any-llm-a-unified-api-to-access-any-llm-provider/)
 - [Mozilla.ai Blog: any-llm 1.0](https://blog.mozilla.ai/run-any-llm-with-a-single-api-introducing-any-llm-v1-0/)
+
+### uv (Package Manager)
+- [uv GitHub](https://github.com/astral-sh/uv)
+- [uv Documentation](https://docs.astral.sh/uv/)
+- [Astral Blog: Introducing uv](https://astral.sh/blog/uv)
 
 ## License
 
