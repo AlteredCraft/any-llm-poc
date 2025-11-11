@@ -7,93 +7,76 @@ Shows how any-llm handles tool calling consistently.
 import os
 import json
 from dotenv import load_dotenv
-from any_llm import LiteLLMClient
+from any_llm import completion
 from rich.console import Console
 from rich.panel import Panel
-from rich.json import JSON
 
 load_dotenv()
 console = Console()
 
 # Models that support tool calling
 MODELS = [
-    "gpt-4o-mini",
-    "claude-3-5-haiku-20241022",
-]
-
-# Define tools
-TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_current_temperature",
-            "description": "Get the current temperature for a specific location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state, e.g., San Francisco, CA"
-                    },
-                    "unit": {
-                        "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "The temperature unit to use"
-                    }
-                },
-                "required": ["location", "unit"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_rain_probability",
-            "description": "Get the probability of rain for a specific location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state, e.g., San Francisco, CA"
-                    }
-                },
-                "required": ["location"]
-            }
-        }
-    }
+    ("openai", "gpt-4o-mini"),
+    ("anthropic", "claude-3-5-haiku-20241022"),
+    ("mistral", "mistral-small-latest"),
 ]
 
 PROMPT = "What's the weather like in San Francisco? Should I bring an umbrella?"
 
 
-def execute_tool(tool_name: str, arguments: dict) -> str:
-    """Mock tool execution."""
-    if tool_name == "get_current_temperature":
-        return json.dumps({
-            "temperature": 68,
-            "unit": arguments.get("unit", "fahrenheit")
-        })
-    elif tool_name == "get_rain_probability":
-        return json.dumps({
-            "probability": 15,
-            "description": "Low chance of rain"
-        })
-    return json.dumps({"error": "Unknown tool"})
+# Define tools as Python functions
+def get_current_temperature(location: str, unit: str) -> str:
+    """Get the current temperature for a specific location.
+
+    Args:
+        location: The city and state, e.g., San Francisco, CA
+        unit: The temperature unit to use (celsius or fahrenheit)
+
+    Returns:
+        Temperature information as JSON string
+    """
+    # Mock response
+    return json.dumps({
+        "temperature": 68 if unit == "fahrenheit" else 20,
+        "unit": unit,
+        "location": location
+    })
 
 
-def test_tool_calling(client: LiteLLMClient, model: str):
+def get_rain_probability(location: str) -> str:
+    """Get the probability of rain for a specific location.
+
+    Args:
+        location: The city and state, e.g., San Francisco, CA
+
+    Returns:
+        Rain probability information as JSON string
+    """
+    # Mock response
+    return json.dumps({
+        "probability": 15,
+        "description": "Low chance of rain",
+        "location": location
+    })
+
+
+# List of tool functions
+TOOLS = [get_current_temperature, get_rain_probability]
+
+
+def test_tool_calling(provider: str, model: str):
     """Test tool calling with a single model."""
-    console.print(f"\n[bold cyan]Testing tool calling: {model}[/bold cyan]")
+    console.print(f"\n[bold cyan]Testing tool calling: {provider}/{model}[/bold cyan]")
 
     messages = [{"role": "user", "content": PROMPT}]
 
     try:
-        # First request
-        response = client.chat.completions.create(
+        # First request with tools
+        response = completion(
             model=model,
+            provider=provider,
             messages=messages,
-            tools=TOOLS
+            tools=TOOLS  # Pass Python functions directly!
         )
 
         assistant_message = response.choices[0].message
@@ -105,6 +88,7 @@ def test_tool_calling(client: LiteLLMClient, model: str):
             # Add assistant message with tool calls
             messages.append({
                 "role": "assistant",
+                "content": assistant_message.content,
                 "tool_calls": assistant_message.tool_calls
             })
 
@@ -117,7 +101,16 @@ def test_tool_calling(client: LiteLLMClient, model: str):
                 console.print(f"  [yellow]Function:[/yellow] {tool_name}")
                 console.print(f"  [yellow]Arguments:[/yellow] {tool_args}")
 
-                result = execute_tool(tool_name, tool_args)
+                # Find and execute the tool
+                result = None
+                for tool_func in TOOLS:
+                    if tool_func.__name__ == tool_name:
+                        result = tool_func(**tool_args)
+                        break
+
+                if result is None:
+                    result = json.dumps({"error": f"Tool {tool_name} not found"})
+
                 console.print(f"  [yellow]Result:[/yellow] {result}")
 
                 messages.append({
@@ -126,9 +119,10 @@ def test_tool_calling(client: LiteLLMClient, model: str):
                     "content": result
                 })
 
-            # Get final response
-            final_response = client.chat.completions.create(
+            # Get final response with tool results
+            final_response = completion(
                 model=model,
+                provider=provider,
                 messages=messages
             )
 
@@ -143,28 +137,28 @@ def test_tool_calling(client: LiteLLMClient, model: str):
                 console.print(Panel(assistant_message.content, border_style="yellow"))
 
     except Exception as e:
-        console.print(f"[red]Error with {model}: {str(e)}[/red]")
+        console.print(f"[red]Error with {provider}/{model}: {str(e)}[/red]")
+        console.print(f"[dim]Make sure you have the required API key set ({provider.upper()}_API_KEY).[/dim]")
 
 
 def main():
     console.print(Panel.fit(
         "[bold blue]Tool Calling Demonstration[/bold blue]\n"
-        "Test function/tool calling across providers",
+        "Test function/tool calling across providers using any-llm",
         border_style="blue"
     ))
 
     console.print(f"\n[bold]Prompt:[/bold] {PROMPT}\n")
-    console.print("[bold]Available tools:[/bold]")
-    console.print("  • get_current_temperature")
-    console.print("  • get_rain_probability")
+    console.print("[bold]Available tools (Python functions):[/bold]")
+    console.print("  • get_current_temperature(location, unit)")
+    console.print("  • get_rain_probability(location)")
 
-    client = LiteLLMClient()
-
-    for model in MODELS:
-        test_tool_calling(client, model)
+    for provider, model in MODELS:
+        test_tool_calling(provider, model)
 
     console.print("\n[bold green]✓ Tool calling test complete![/bold green]")
-    console.print("[dim]any-llm provides consistent tool calling across OpenAI, Anthropic, and other providers.[/dim]")
+    console.print("[dim]any-llm lets you pass Python functions directly as tools![/dim]")
+    console.print("[dim]The library automatically converts them to the provider's format.[/dim]")
 
 
 if __name__ == "__main__":

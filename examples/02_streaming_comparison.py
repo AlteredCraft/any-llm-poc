@@ -7,25 +7,25 @@ Shows how any-llm normalizes streaming responses.
 import os
 import time
 from dotenv import load_dotenv
-from any_llm import LiteLLMClient
+from any_llm import completion
 from rich.console import Console
 from rich.panel import Panel
-from rich.live import Live
 
 load_dotenv()
 console = Console()
 
 MODELS = [
-    "gpt-4o-mini",
-    "claude-3-5-haiku-20241022",
+    ("openai", "gpt-4o-mini"),
+    ("anthropic", "claude-3-5-haiku-20241022"),
+    ("mistral", "mistral-small-latest"),
 ]
 
 PROMPT = "Write a short haiku about coding."
 
 
-def test_streaming(client: LiteLLMClient, model: str, prompt: str):
+def test_streaming(provider: str, model: str, prompt: str):
     """Test streaming with a single model."""
-    console.print(f"\n[bold cyan]Streaming from: {model}[/bold cyan]")
+    console.print(f"\n[bold cyan]Streaming from: {provider}/{model}[/bold cyan]")
 
     try:
         start_time = time.time()
@@ -34,8 +34,9 @@ def test_streaming(client: LiteLLMClient, model: str, prompt: str):
 
         console.print("[dim]Response: [/dim]", end="")
 
-        for chunk in client.chat.completions.create(
+        for chunk in completion(
             model=model,
+            provider=provider,
             messages=[{"role": "user", "content": prompt}],
             stream=True
         ):
@@ -59,25 +60,25 @@ def test_streaming(client: LiteLLMClient, model: str, prompt: str):
         console.print(f"[dim]Characters: {len(full_response)}[/dim]")
 
     except Exception as e:
-        console.print(f"\n[red]Error with {model}: {str(e)}[/red]")
+        console.print(f"\n[red]Error with {provider}/{model}: {str(e)}[/red]")
+        console.print(f"[dim]Make sure you have the required API key set ({provider.upper()}_API_KEY).[/dim]")
 
 
 def main():
     console.print(Panel.fit(
         "[bold blue]Streaming Comparison[/bold blue]\n"
-        "Compare streaming performance across providers",
+        "Compare streaming performance across providers using any-llm",
         border_style="blue"
     ))
 
     console.print(f"\n[bold]Prompt:[/bold] {PROMPT}\n")
 
-    client = LiteLLMClient()
-
-    for model in MODELS:
-        test_streaming(client, model, PROMPT)
+    for provider, model in MODELS:
+        test_streaming(provider, model, PROMPT)
 
     console.print("\n[bold green]✓ Streaming test complete![/bold green]")
     console.print("[dim]any-llm provides a consistent streaming interface across all providers.[/dim]")
+    console.print("[dim]Just add stream=True to the completion() call![/dim]")
 
 
 if __name__ == "__main__":

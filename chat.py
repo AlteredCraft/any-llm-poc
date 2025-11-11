@@ -6,14 +6,14 @@ Shows ease of switching between models and feature differences.
 
 import os
 import sys
-from typing import Optional, List, Dict, Any
+import json
+from typing import Optional, List, Dict, Any, Callable
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
-from rich.markdown import Markdown
 from rich.table import Table
-from any_llm import LiteLLMClient
+from any_llm import completion, AnyLLM
 
 # Load environment variables
 load_dotenv()
@@ -25,117 +25,83 @@ console = Console()
 MODELS = {
     "1": {
         "name": "gpt-4o",
-        "provider": "OpenAI",
+        "provider": "openai",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": False,
         "notes": "Fast, capable general-purpose model"
     },
     "2": {
         "name": "gpt-4o-mini",
-        "provider": "OpenAI",
+        "provider": "openai",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": False,
         "notes": "Smaller, faster, cheaper version"
     },
     "3": {
         "name": "claude-3-5-sonnet-20241022",
-        "provider": "Anthropic",
+        "provider": "anthropic",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": False,
         "notes": "Excellent reasoning and code generation"
     },
     "4": {
         "name": "claude-3-5-haiku-20241022",
-        "provider": "Anthropic",
+        "provider": "anthropic",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": False,
         "notes": "Fast and efficient"
     },
     "5": {
-        "name": "mistral-large-latest",
-        "provider": "Mistral",
+        "name": "mistral-small-latest",
+        "provider": "mistral",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": False,
-        "notes": "Strong European alternative"
+        "notes": "Fast and efficient European model"
     },
     "6": {
-        "name": "gemini-2.0-flash-exp",
-        "provider": "Google",
+        "name": "mistral-large-latest",
+        "provider": "mistral",
         "supports_tools": True,
         "supports_streaming": True,
-        "supports_thinking": True,
-        "notes": "Fast multimodal model with thinking"
+        "notes": "Strong European alternative"
     },
 }
 
 
-# Example tools for demonstrating tool calling
-EXAMPLE_TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get the current weather for a location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state, e.g., San Francisco, CA"
-                    },
-                    "unit": {
-                        "type": "string",
-                        "enum": ["celsius", "fahrenheit"],
-                        "description": "The temperature unit"
-                    }
-                },
-                "required": ["location"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "calculate",
-            "description": "Perform a mathematical calculation",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "expression": {
-                        "type": "string",
-                        "description": "The mathematical expression to evaluate, e.g., '2 + 2' or '10 * 5'"
-                    }
-                },
-                "required": ["expression"]
-            }
-        }
-    }
-]
+def get_weather(location: str, unit: str = "fahrenheit") -> str:
+    """Get the current weather for a location.
+
+    Args:
+        location: The city and state, e.g., San Francisco, CA
+        unit: The temperature unit (celsius or fahrenheit)
+
+    Returns:
+        Weather information as a string
+    """
+    # Mock response
+    temp = 72 if unit == "fahrenheit" else 22
+    return f"The weather in {location} is {temp}°{unit[0].upper()} and sunny."
 
 
-def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> str:
-    """Execute a tool call and return the result."""
-    if tool_name == "get_weather":
-        location = arguments.get("location", "Unknown")
-        unit = arguments.get("unit", "fahrenheit")
-        # Mock response
-        return f"The weather in {location} is 72°{unit[0].upper()} and sunny."
+def calculate(expression: str) -> str:
+    """Perform a mathematical calculation.
 
-    elif tool_name == "calculate":
-        expression = arguments.get("expression", "")
-        try:
-            # Simple eval for demo purposes (not for production!)
-            result = eval(expression, {"__builtins__": {}}, {})
-            return f"Result: {result}"
-        except Exception as e:
-            return f"Error calculating: {str(e)}"
+    Args:
+        expression: The mathematical expression to evaluate, e.g., '2 + 2' or '10 * 5'
 
-    return f"Unknown tool: {tool_name}"
+    Returns:
+        The calculation result
+    """
+    try:
+        # Simple eval for demo purposes (not for production!)
+        result = eval(expression, {"__builtins__": {}}, {})
+        return f"Result: {result}"
+    except Exception as e:
+        return f"Error calculating: {str(e)}"
+
+
+# Available tools as Python functions
+TOOLS = [get_weather, calculate]
 
 
 def display_models():
@@ -146,26 +112,23 @@ def display_models():
     table.add_column("Provider", style="yellow")
     table.add_column("Tools", justify="center")
     table.add_column("Stream", justify="center")
-    table.add_column("Thinking", justify="center")
     table.add_column("Notes")
 
     for key, model in MODELS.items():
         table.add_row(
             key,
             model["name"],
-            model["provider"],
+            model["provider"].capitalize(),
             "✓" if model["supports_tools"] else "✗",
             "✓" if model["supports_streaming"] else "✗",
-            "✓" if model["supports_thinking"] else "✗",
             model["notes"]
         )
 
     console.print(table)
 
 
-def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: bool = True):
+def chat_with_model(model_name: str, provider: str, use_tools: bool = False, use_streaming: bool = True):
     """Start an interactive chat session with the specified model."""
-    client = LiteLLMClient()
     messages = []
 
     model_info = next((m for m in MODELS.values() if m["name"] == model_name), None)
@@ -212,11 +175,12 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
             # Prepare API call parameters
             kwargs = {
                 "model": model_name,
+                "provider": provider,
                 "messages": messages,
             }
 
             if use_tools and model_info["supports_tools"]:
-                kwargs["tools"] = EXAMPLE_TOOLS
+                kwargs["tools"] = TOOLS
 
             # Make API call
             console.print("\n[bold green]Assistant[/bold green]")
@@ -224,10 +188,11 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
             if use_streaming and model_info["supports_streaming"]:
                 # Streaming response
                 full_response = ""
-                tool_calls = []
+                tool_calls_data = []
+                current_tool_call = None
 
                 try:
-                    for chunk in client.chat.completions.create(**kwargs, stream=True):
+                    for chunk in completion(**kwargs, stream=True):
                         if hasattr(chunk.choices[0], 'delta'):
                             delta = chunk.choices[0].delta
 
@@ -236,30 +201,70 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
                                 console.print(delta.content, end="")
                                 full_response += delta.content
 
-                            # Handle tool calls
+                            # Handle tool calls (streaming)
                             if hasattr(delta, 'tool_calls') and delta.tool_calls:
-                                tool_calls.extend(delta.tool_calls)
+                                for tc in delta.tool_calls:
+                                    if tc.index is not None:
+                                        # Start or continue a tool call
+                                        while len(tool_calls_data) <= tc.index:
+                                            tool_calls_data.append({
+                                                "id": None,
+                                                "type": "function",
+                                                "function": {"name": "", "arguments": ""}
+                                            })
+
+                                        if tc.id:
+                                            tool_calls_data[tc.index]["id"] = tc.id
+                                        if tc.function:
+                                            if tc.function.name:
+                                                tool_calls_data[tc.index]["function"]["name"] = tc.function.name
+                                            if tc.function.arguments:
+                                                tool_calls_data[tc.index]["function"]["arguments"] += tc.function.arguments
 
                     console.print()  # New line after streaming
 
                     # Process tool calls if any
-                    if tool_calls:
+                    if tool_calls_data and any(tc.get("id") for tc in tool_calls_data):
+                        # Create proper tool call objects for the message
+                        from types import SimpleNamespace
+
+                        tool_call_objects = []
+                        for tc_data in tool_calls_data:
+                            if tc_data.get("id"):
+                                tc_obj = SimpleNamespace(
+                                    id=tc_data["id"],
+                                    type=tc_data["type"],
+                                    function=SimpleNamespace(
+                                        name=tc_data["function"]["name"],
+                                        arguments=tc_data["function"]["arguments"]
+                                    )
+                                )
+                                tool_call_objects.append(tc_obj)
+
                         messages.append({
                             "role": "assistant",
                             "content": full_response or None,
-                            "tool_calls": tool_calls
+                            "tool_calls": tool_call_objects
                         })
 
                         console.print("\n[yellow]🔧 Executing tools...[/yellow]")
 
-                        for tool_call in tool_calls:
-                            import json
+                        # Execute each tool
+                        for tool_call in tool_call_objects:
                             tool_name = tool_call.function.name
                             tool_args = json.loads(tool_call.function.arguments)
 
                             console.print(f"[dim]→ {tool_name}({tool_args})[/dim]")
 
-                            result = execute_tool(tool_name, tool_args)
+                            # Find and execute the tool
+                            result = None
+                            for tool_func in TOOLS:
+                                if tool_func.__name__ == tool_name:
+                                    result = tool_func(**tool_args)
+                                    break
+
+                            if result is None:
+                                result = f"Error: Tool {tool_name} not found"
 
                             # Add tool response
                             messages.append({
@@ -272,8 +277,9 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
                         console.print("\n[bold green]Assistant (with tool results)[/bold green]")
                         final_response = ""
 
-                        for chunk in client.chat.completions.create(
+                        for chunk in completion(
                             model=model_name,
+                            provider=provider,
                             messages=messages,
                             stream=True
                         ):
@@ -287,7 +293,8 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
                         messages.append({"role": "assistant", "content": final_response})
                     else:
                         # No tool calls, just add the response
-                        messages.append({"role": "assistant", "content": full_response})
+                        if full_response:
+                            messages.append({"role": "assistant", "content": full_response})
 
                 except Exception as e:
                     console.print(f"\n[red]Error: {str(e)}[/red]")
@@ -297,12 +304,11 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
             else:
                 # Non-streaming response
                 try:
-                    response = client.chat.completions.create(**kwargs)
+                    response = completion(**kwargs)
                     assistant_message = response.choices[0].message
 
                     if hasattr(assistant_message, 'content') and assistant_message.content:
                         console.print(assistant_message.content)
-                        messages.append({"role": "assistant", "content": assistant_message.content})
 
                     # Handle tool calls
                     if hasattr(assistant_message, 'tool_calls') and assistant_message.tool_calls:
@@ -310,17 +316,25 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
 
                         messages.append({
                             "role": "assistant",
+                            "content": assistant_message.content,
                             "tool_calls": assistant_message.tool_calls
                         })
 
                         for tool_call in assistant_message.tool_calls:
-                            import json
                             tool_name = tool_call.function.name
                             tool_args = json.loads(tool_call.function.arguments)
 
                             console.print(f"[dim]→ {tool_name}({tool_args})[/dim]")
 
-                            result = execute_tool(tool_name, tool_args)
+                            # Find and execute the tool
+                            result = None
+                            for tool_func in TOOLS:
+                                if tool_func.__name__ == tool_name:
+                                    result = tool_func(**tool_args)
+                                    break
+
+                            if result is None:
+                                result = f"Error: Tool {tool_name} not found"
 
                             messages.append({
                                 "role": "tool",
@@ -329,10 +343,13 @@ def chat_with_model(model_name: str, use_tools: bool = False, use_streaming: boo
                             })
 
                         # Get final response
-                        final = client.chat.completions.create(model=model_name, messages=messages)
+                        final = completion(model=model_name, provider=provider, messages=messages)
                         final_content = final.choices[0].message.content
                         console.print(f"\n[bold green]Assistant (with tool results)[/bold green]\n{final_content}")
                         messages.append({"role": "assistant", "content": final_content})
+                    else:
+                        # No tool calls
+                        messages.append({"role": "assistant", "content": assistant_message.content})
 
                 except Exception as e:
                     console.print(f"[red]Error: {str(e)}[/red]")
@@ -361,7 +378,6 @@ def main():
         "OpenAI": os.getenv("OPENAI_API_KEY"),
         "Anthropic": os.getenv("ANTHROPIC_API_KEY"),
         "Mistral": os.getenv("MISTRAL_API_KEY"),
-        "Google": os.getenv("GOOGLE_API_KEY"),
     }
 
     console.print("\n[bold]API Key Status:[/bold]")
@@ -371,8 +387,6 @@ def main():
         console.print(f"  [{color}]{status} {provider}[/{color}]")
 
     console.print()
-
-    current_model = None
 
     while True:
         # Show models and let user select
@@ -390,6 +404,7 @@ def main():
 
         model_info = MODELS[choice]
         current_model = model_info["name"]
+        current_provider = model_info["provider"]
 
         # Ask about tools
         use_tools = Prompt.ask(
@@ -399,7 +414,7 @@ def main():
         ) == "y"
 
         # Start chat
-        result = chat_with_model(current_model, use_tools=use_tools)
+        result = chat_with_model(current_model, current_provider, use_tools=use_tools)
 
         if result != "switch":
             break
