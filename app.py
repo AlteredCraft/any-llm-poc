@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import requests
-from any_llm import completion
+from any_llm import acompletion
 
 # Load environment variables
 load_dotenv()
@@ -63,7 +63,7 @@ async def chat(request: ChatRequest):
 
     try:
         # Call any-llm SDK via Gateway
-        response = await completion(
+        response = await acompletion(
             provider="gateway",
             model=f"{request.provider}:{request.model}",
             api_base=f"{GATEWAY_BASE_URL}/v1",
