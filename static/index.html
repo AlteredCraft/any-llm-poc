@@ -10,14 +10,27 @@
     <div class="container">
         <header>
             <h1>any-llm Gateway POC</h1>
-            <p>Choose a model and start chatting!</p>
+            <p>Choose a user and model to start chatting!</p>
+            <nav class="nav-links">
+                <a href="/" class="active">Chat</a>
+                <a href="/dashboard">Dashboard</a>
+            </nav>
         </header>
 
-        <div class="model-selector">
-            <label for="model-select">Select Model:</label>
-            <select id="model-select">
-                <option value="">Loading models...</option>
-            </select>
+        <div class="selector-container">
+            <div class="user-selector">
+                <label for="user-select">Select User:</label>
+                <select id="user-select">
+                    <option value="">Loading users...</option>
+                </select>
+            </div>
+
+            <div class="model-selector">
+                <label for="model-select">Select Model:</label>
+                <select id="model-select">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
         </div>
 
         <div class="metrics-panel">
@@ -61,7 +74,7 @@
 
         <div class="chat-container">
             <div id="chat-messages" class="chat-messages">
-                <div class="system-message">Select a model to start chatting...</div>
+                <div class="system-message">Select a user and model to start chatting...</div>
             </div>
 
             <div class="input-container">

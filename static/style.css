@@ -20,7 +20,7 @@ body {
 }
 
 header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
     color: white;
     padding: 30px;
     text-align: center;
@@ -33,25 +33,60 @@ header h1 {
 header p {
     opacity: 0.9;
     font-size: 14px;
+    margin-bottom: 1rem;
 }
 
-.model-selector {
+.nav-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.nav-links a {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.nav-links a.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e3a8a;
+}
+
+.selector-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
     padding: 20px;
     border-bottom: 1px solid #e0e0e0;
     background-color: #fafafa;
 }
 
-.model-selector label {
-    font-weight: 600;
-    margin-right: 10px;
+.user-selector,
+.model-selector {
+    display: flex;
+    flex-direction: column;
 }
 
+.user-selector label,
+.model-selector label {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.user-selector select,
 .model-selector select {
     padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
-    min-width: 250px;
 }
 
 .metrics-panel {
@@ -94,7 +129,7 @@ header p {
 
 .metric-value {
     font-weight: 600;
-    color: #667eea;
+    color: #1e3a8a;
 }
 
 .total-metrics {
@@ -124,7 +159,7 @@ header p {
 }
 
 .user-message {
-    background: #667eea;
+    background: #1e3a8a;
     color: white;
     margin-left: auto;
     text-align: right;
@@ -166,12 +201,12 @@ header p {
 
 #message-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3b82f6;
 }
 
 #send-button {
     padding: 12px 24px;
-    background: #667eea;
+    background: #1e3a8a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -181,7 +216,7 @@ header p {
 }
 
 #send-button:hover:not(:disabled) {
-    background: #5568d3;
+    background: #1e40af;
 }
 
 #send-button:disabled,
@@ -193,4 +228,24 @@ header p {
 .loading {
     color: #999;
     font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .selector-container {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        margin: 0;
+        border-radius: 0;
+    }
+
+    body {
+        padding: 0;
+    }
 }
