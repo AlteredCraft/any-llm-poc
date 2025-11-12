@@ -37,6 +37,47 @@ async function loadModels() {
     }
 }
 
+// Load available tools on page load
+async function loadTools() {
+    const toolsList = document.getElementById('tools-list');
+    try {
+        const response = await fetch('/api/tools');
+        const data = await response.json();
+
+        if (data.tools && data.tools.length > 0) {
+            toolsList.innerHTML = '';
+            data.tools.forEach(tool => {
+                const toolDiv = document.createElement('div');
+                toolDiv.className = 'tool-item';
+
+                const toolName = document.createElement('strong');
+                toolName.textContent = tool.name;
+
+                const toolDesc = document.createElement('p');
+                toolDesc.textContent = tool.description;
+
+                const paramsDiv = document.createElement('div');
+                paramsDiv.className = 'tool-params';
+                const paramsList = Object.entries(tool.parameters)
+                    .map(([key, value]) => `${key}: ${value.type}${value.default ? ` (default: ${value.default})` : ''}`)
+                    .join(', ');
+                paramsDiv.textContent = `Parameters: ${paramsList}`;
+
+                toolDiv.appendChild(toolName);
+                toolDiv.appendChild(toolDesc);
+                toolDiv.appendChild(paramsDiv);
+
+                toolsList.appendChild(toolDiv);
+            });
+        } else {
+            toolsList.innerHTML = '<div class="system-message">No tools available</div>';
+        }
+    } catch (error) {
+        console.error('Failed to load tools:', error);
+        toolsList.innerHTML = '<div class="system-message">Error loading tools</div>';
+    }
+}
+
 // Reset session (clear chat and metrics)
 function resetSession() {
     chatMessages.innerHTML = '<div class="system-message">Session reset. Start chatting!</div>';
@@ -177,3 +218,5 @@ function updateInputState() {
 
 // Initialize
 loadModels();
+loadTools();
+

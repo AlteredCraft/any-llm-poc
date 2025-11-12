@@ -35,6 +35,61 @@ AVAILABLE_MODELS = [
 ]
 
 
+# Tool functions for any-llm
+def get_weather(location: str, unit: str = "F") -> str:
+    """Get weather information for a location.
+
+    Args:
+        location: The city or location to get weather for
+        unit: Temperature unit, either 'C' or 'F'
+
+    Returns:
+        str: Weather information for the location
+    """
+    # Pseudo implementation - returns mock weather data
+    temp = 75 if unit == "F" else 24
+    return f"Weather in {location} is sunny and {temp}{unit}!"
+
+
+def divide(dividend: float, divisor: float) -> float:
+    """Divide two numbers.
+
+    Args:
+        dividend: The number to be divided
+        divisor: The number to divide by
+
+    Returns:
+        float: The result of dividend / divisor
+
+    Raises:
+        ValueError: If divisor is zero
+    """
+    if divisor == 0:
+        raise ValueError("Cannot divide by zero")
+    return dividend / divisor
+
+
+# List of available tools
+AVAILABLE_TOOLS = [
+    {
+        "name": "get_weather",
+        "description": "Get weather information for a location",
+        "parameters": {
+            "location": {"type": "string", "description": "The city or location to get weather for"},
+            "unit": {"type": "string", "description": "Temperature unit, either 'C' or 'F'", "default": "F"}
+        }
+    },
+    {
+        "name": "divide",
+        "description": "Divide two numbers",
+        "parameters": {
+            "dividend": {"type": "number", "description": "The number to be divided"},
+            "divisor": {"type": "number", "description": "The number to divide by"}
+        }
+    }
+]
+
+
 # Request/Response models
 class ChatRequest(BaseModel):
     provider: str
@@ -80,18 +135,24 @@ async def get_models():
     return {"models": AVAILABLE_MODELS}
 
 
+@app.get("/api/tools")
+async def get_tools():
+    """Return list of available tools"""
+    return {"tools": AVAILABLE_TOOLS}
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Handle chat completion requests"""
-    logger.info(f"Chat request - model: {request.provider}:{request.model}")
+    """Handle chat completion requests with tool support"""
 
     try:
-        # Call any-llm SDK directly (no Gateway)
+        # Call any-llm SDK via Gateway with tools
         response = await acompletion(
             provider=request.provider,
             model=request.model,
             messages=[{"role": "user", "content": request.message}],
             max_tokens=2048,
+            tools=[get_weather, divide],  # Pass Python callables as tools
         )
 
         # Extract response and token usage
