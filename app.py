@@ -63,7 +63,7 @@ async def chat(request: ChatRequest):
 
     try:
         # Call any-llm SDK via Gateway
-        response = completion(
+        response = await completion(
             provider="gateway",
             model=f"{request.provider}:{request.model}",
             api_base=f"{GATEWAY_BASE_URL}/v1",
