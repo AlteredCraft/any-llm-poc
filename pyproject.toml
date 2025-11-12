@@ -1,0 +1,11 @@
+[project]
+name = "any-llm-poc"
+version = "0.1.0"
+description = "A minimal CLI chat application demonstrating the any-llm library's capabilities"
+readme = "README.md"
+requires-python = ">=3.13"
+# Note, instead of all, you can specify specific models: https://mozilla-ai.github.io/any-llm/providers/
+dependencies = [
+    "any-llm-sdk[anthropic,gemini]>=1.2.0",
+    "python-dotenv>=1.2.1",
+]
