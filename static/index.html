@@ -3,28 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>any-llm Gateway POC</title>
+    <title>any-llm Direct Provider POC</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>any-llm Gateway POC</h1>
-            <p>Choose a user and model to start chatting!</p>
-            <nav class="nav-links">
-                <a href="/" class="active">Chat</a>
-                <a href="/dashboard">Dashboard</a>
-            </nav>
+            <h1>any-llm Direct Provider POC</h1>
+            <p>Choose a model to start chatting!</p>
         </header>
 
         <div class="selector-container">
-            <div class="user-selector">
-                <label for="user-select">Select User:</label>
-                <select id="user-select">
-                    <option value="">Loading users...</option>
-                </select>
-            </div>
-
             <div class="model-selector">
                 <label for="model-select">Select Model:</label>
                 <select id="model-select">
@@ -34,47 +23,26 @@
         </div>
 
         <div class="metrics-panel">
-            <h3>Usage Metrics</h3>
+            <h3>Session Metrics</h3>
             <div class="metrics-grid">
                 <div class="metric">
-                    <span class="metric-label">Session Prompt Tokens:</span>
+                    <span class="metric-label">Prompt Tokens:</span>
                     <span class="metric-value" id="session-prompt-tokens">0</span>
                 </div>
                 <div class="metric">
-                    <span class="metric-label">Session Completion Tokens:</span>
+                    <span class="metric-label">Completion Tokens:</span>
                     <span class="metric-value" id="session-completion-tokens">0</span>
                 </div>
                 <div class="metric">
-                    <span class="metric-label">Session Total Tokens:</span>
+                    <span class="metric-label">Total Tokens:</span>
                     <span class="metric-value" id="session-total-tokens">0</span>
-                </div>
-            </div>
-            <div class="total-metrics">
-                <h4>Gateway Total (All Sessions)</h4>
-                <div class="metrics-grid">
-                    <div class="metric">
-                        <span class="metric-label">Total Prompt Tokens:</span>
-                        <span class="metric-value" id="total-prompt-tokens">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Total Completion Tokens:</span>
-                        <span class="metric-value" id="total-completion-tokens">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Total Tokens:</span>
-                        <span class="metric-value" id="total-tokens">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-label">Total Requests:</span>
-                        <span class="metric-value" id="request-count">-</span>
-                    </div>
                 </div>
             </div>
         </div>
 
         <div class="chat-container">
             <div id="chat-messages" class="chat-messages">
-                <div class="system-message">Select a user and model to start chatting...</div>
+                <div class="system-message">Select a model to start chatting...</div>
             </div>
 
             <div class="input-container">

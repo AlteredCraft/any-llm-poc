@@ -1,27 +1,20 @@
-# any-llm Gateway POC
+# any-llm Direct Provider POC
 
-A simple web application demonstrating the [any-llm](https://github.com/mozilla-ai/any-llm) Gateway's ability to switch between different LLM providers and models while tracking usage metrics.
+A simple web application demonstrating the [any-llm](https://github.com/mozilla-ai/any-llm) SDK's ability to switch between different LLM providers (Anthropic, Gemini) with direct provider calls.
 
 ## Features
 
-- **Model Selection**: Choose between different LLM providers (Gemini, Claude, etc.)
+- **Model Selection**: Choose between different LLM providers (Gemini, Claude)
 - **Chat Interface**: Simple, clean chat UI
-- **Usage Tracking**:
-  - Per-session metrics (prompt tokens, completion tokens, total tokens)
-  - Gateway total usage across all sessions
-  - Automatic metric updates after each completion
-- **Session Management**: Switching models resets the chat and session metrics
+- **Per-Message Token Tracking**: See token usage for each message
+- **Session Metrics**: Track cumulative tokens per session (resets when switching models)
 
 ## Prerequisites
 
-1. **Python 3.13+** with [uv](https://github.com/astral-sh/uv) installed
-2. **any-llm Gateway** running locally:
-   ```bash
-   docker run -p 8000:8000 \
-     -e ANTHROPIC_API_KEY=your_key \
-     -e GEMINI_API_KEY=your_key \
-     ghcr.io/mozilla-ai/any-llm:latest
-   ```
+- **Python 3.13+** with [uv](https://github.com/astral-sh/uv) installed
+- **Provider API Keys**:
+  - [Anthropic API Key](https://console.anthropic.com/) for Claude models
+  - [Google API Key](https://aistudio.google.com/app/apikey) for Gemini models
 
 ## Setup
 
@@ -32,12 +25,13 @@ A simple web application demonstrating the [any-llm](https://github.com/mozilla-
    cp .env.example .env
    ```
 
-3. **Edit `.env` and add your Gateway master key**:
+3. **Edit `.env` and add your API keys**:
    ```
-   GATEWAY_MASTER_KEY=your_gateway_master_key_here
+   ANTHROPIC_API_KEY=your_anthropic_key_here
+   GOOGLE_API_KEY=your_google_key_here
    ```
 
-4. **Install dependencies** (uv will handle this automatically):
+4. **Install dependencies**:
    ```bash
    uv sync
    ```
@@ -63,23 +57,20 @@ The application will be available at: **http://localhost:8080**
 1. Open your browser to `http://localhost:8080`
 2. Select a model from the dropdown
 3. Start chatting!
-4. Watch the metrics update after each response
+4. Watch the token metrics update after each response
 5. Switch models to reset the session and start fresh
 
 ## Architecture
 
 - **Backend**: FastAPI (single file `app.py`)
 - **Frontend**: Vanilla HTML/CSS/JavaScript (in `static/` directory)
-- **API Integration**:
-  - any-llm SDK for chat completions
-  - Direct Gateway API calls for usage metrics
+- **API Integration**: any-llm SDK calling providers directly (no proxy/gateway)
 
 ## API Endpoints
 
 - `GET /` - Serve the web interface
 - `GET /api/models` - List available models
 - `POST /api/chat` - Send a chat message and get completion
-- `GET /api/usage` - Fetch total usage from Gateway
 
 ## Customization
 
@@ -88,15 +79,14 @@ To add or modify available models, edit the `AVAILABLE_MODELS` list in `app.py`:
 ```python
 AVAILABLE_MODELS = [
     {"provider": "gemini", "model": "gemini-2.5-flash-lite", "display": "Gemini 2.5 Flash Lite"},
-    {"provider": "anthropic", "model": "claude-3-5-haiku-20241022", "display": "Claude 3.5 Haiku"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-5", "display": "Claude 4.5 Sonnet"},
     # Add more models here
 ]
 ```
 
-## Teaching Notes
+## What This Demonstrates
 
-This POC demonstrates:
-- How any-llm abstracts away provider differences
-- Real-time usage tracking and cost monitoring
+- How any-llm SDK abstracts away provider differences
 - Simple integration patterns for web applications
-- The Gateway's role as a unified proxy for multiple providers
+- Direct provider calls without a proxy layer
+- Real-time token usage tracking

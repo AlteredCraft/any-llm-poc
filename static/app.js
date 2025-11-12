@@ -1,6 +1,5 @@
 // State management
 let currentModel = null;
-let currentUser = null;
 let sessionMetrics = {
     promptTokens: 0,
     completionTokens: 0,
@@ -8,7 +7,6 @@ let sessionMetrics = {
 };
 
 // DOM elements
-const userSelect = document.getElementById('user-select');
 const modelSelect = document.getElementById('model-select');
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
@@ -18,42 +16,6 @@ const sendButton = document.getElementById('send-button');
 const sessionPromptTokens = document.getElementById('session-prompt-tokens');
 const sessionCompletionTokens = document.getElementById('session-completion-tokens');
 const sessionTotalTokens = document.getElementById('session-total-tokens');
-const totalPromptTokens = document.getElementById('total-prompt-tokens');
-const totalCompletionTokens = document.getElementById('total-completion-tokens');
-const totalTokens = document.getElementById('total-tokens');
-const requestCount = document.getElementById('request-count');
-
-// Load available users on page load
-async function loadUsers() {
-    try {
-        const response = await fetch('/api/users');
-        const users = await response.json();
-
-        // If no users exist, replace the select with a link to create users
-        if (users.length === 0) {
-            const userSelectorDiv = document.querySelector('.user-selector');
-            userSelectorDiv.innerHTML = `
-                <label>No users found</label>
-                <div class="no-users-message">
-                    <p>No users available. Please <a href="/dashboard#create-user">create a user</a> to get started.</p>
-                </div>
-            `;
-            return;
-        }
-
-        userSelect.innerHTML = '<option value="">-- Select a user --</option>';
-
-        users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.user_id;
-            option.textContent = user.alias ? `${user.alias} (${user.user_id})` : user.user_id;
-            userSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Failed to load users:', error);
-        userSelect.innerHTML = '<option value="">Error loading users</option>';
-    }
-}
 
 // Load available models on page load
 async function loadModels() {
@@ -84,9 +46,6 @@ function resetSession() {
         totalTokens: 0
     };
     updateSessionMetrics();
-    if (currentUser) {
-        fetchTotalUsage();
-    }
 }
 
 // Update session metrics display
@@ -94,33 +53,6 @@ function updateSessionMetrics() {
     sessionPromptTokens.textContent = sessionMetrics.promptTokens;
     sessionCompletionTokens.textContent = sessionMetrics.completionTokens;
     sessionTotalTokens.textContent = sessionMetrics.totalTokens;
-}
-
-// Fetch total usage from Gateway
-async function fetchTotalUsage() {
-    if (!currentUser) {
-        totalPromptTokens.textContent = '-';
-        totalCompletionTokens.textContent = '-';
-        totalTokens.textContent = '-';
-        requestCount.textContent = '-';
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/usage?user_id=${encodeURIComponent(currentUser)}`);
-        const data = await response.json();
-
-        totalPromptTokens.textContent = data.total_prompt_tokens;
-        totalCompletionTokens.textContent = data.total_completion_tokens;
-        totalTokens.textContent = data.total_tokens;
-        requestCount.textContent = data.request_count;
-    } catch (error) {
-        console.error('Failed to fetch usage:', error);
-        totalPromptTokens.textContent = 'Error';
-        totalCompletionTokens.textContent = 'Error';
-        totalTokens.textContent = 'Error';
-        requestCount.textContent = 'Error';
-    }
 }
 
 // Add message to chat
@@ -146,7 +78,7 @@ function addMessage(content, type, tokens = null) {
 // Send message
 async function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || !currentModel || !currentUser) return;
+    if (!message || !currentModel) return;
 
     // Disable input while processing
     messageInput.disabled = true;
@@ -172,8 +104,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 provider: currentModel.provider,
                 model: currentModel.model,
-                message: message,
-                user_id: currentUser
+                message: message
             })
         });
 
@@ -199,9 +130,6 @@ async function sendMessage() {
         sessionMetrics.totalTokens += data.total_tokens;
         updateSessionMetrics();
 
-        // Fetch updated total usage
-        fetchTotalUsage();
-
     } catch (error) {
         console.error('Failed to send message:', error);
         chatMessages.removeChild(loadingDiv);
@@ -215,25 +143,12 @@ async function sendMessage() {
 }
 
 // Event listeners
-userSelect.addEventListener('change', (e) => {
-    if (e.target.value) {
-        currentUser = e.target.value;
-        updateInputState();
-        resetSession();
-    } else {
-        currentUser = null;
-        updateInputState();
-    }
-});
-
 modelSelect.addEventListener('change', (e) => {
     if (e.target.value) {
         currentModel = JSON.parse(e.target.value);
         updateInputState();
         resetSession();
-        if (currentUser && currentModel) {
-            messageInput.focus();
-        }
+        messageInput.focus();
     } else {
         currentModel = null;
         updateInputState();
@@ -251,7 +166,7 @@ messageInput.addEventListener('keypress', (e) => {
 
 // Update input state based on selections
 function updateInputState() {
-    if (currentUser && currentModel) {
+    if (currentModel) {
         messageInput.disabled = false;
         sendButton.disabled = false;
     } else {
@@ -261,6 +176,4 @@ function updateInputState() {
 }
 
 // Initialize
-loadUsers();
 loadModels();
-fetchTotalUsage();
