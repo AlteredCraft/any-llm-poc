@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>any-llm Gateway POC</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>any-llm Gateway POC</h1>
+            <p>Choose a model and start chatting!</p>
+        </header>
+
+        <div class="model-selector">
+            <label for="model-select">Select Model:</label>
+            <select id="model-select">
+                <option value="">Loading models...</option>
+            </select>
+        </div>
+
+        <div class="metrics-panel">
+            <h3>Usage Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span class="metric-label">Session Prompt Tokens:</span>
+                    <span class="metric-value" id="session-prompt-tokens">0</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Session Completion Tokens:</span>
+                    <span class="metric-value" id="session-completion-tokens">0</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Session Total Tokens:</span>
+                    <span class="metric-value" id="session-total-tokens">0</span>
+                </div>
+            </div>
+            <div class="total-metrics">
+                <h4>Gateway Total (All Sessions)</h4>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <span class="metric-label">Total Prompt Tokens:</span>
+                        <span class="metric-value" id="total-prompt-tokens">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Completion Tokens:</span>
+                        <span class="metric-value" id="total-completion-tokens">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Tokens:</span>
+                        <span class="metric-value" id="total-tokens">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Requests:</span>
+                        <span class="metric-value" id="request-count">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div id="chat-messages" class="chat-messages">
+                <div class="system-message">Select a model to start chatting...</div>
+            </div>
+
+            <div class="input-container">
+                <input
+                    type="text"
+                    id="message-input"
+                    placeholder="Type your message..."
+                    disabled
+                >
+                <button id="send-button" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

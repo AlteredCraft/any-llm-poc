@@ -8,4 +8,7 @@ requires-python = ">=3.13"
 dependencies = [
     "any-llm-sdk[anthropic,gemini]>=1.2.0",
     "python-dotenv>=1.2.1",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "requests>=2.32.0",
 ]
