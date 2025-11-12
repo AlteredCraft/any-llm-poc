@@ -168,10 +168,10 @@ async def get_usage(user_id: str = Query(..., description="User ID to fetch usag
         usage_data = response.json()
 
         # Calculate totals
-        total_prompt_tokens = sum(item.get("prompt_tokens", 0) for item in usage_data)
-        total_completion_tokens = sum(item.get("completion_tokens", 0) for item in usage_data)
-        total_tokens = sum(item.get("total_tokens", 0) for item in usage_data)
-        total_cost = sum(item.get("cost", 0) for item in usage_data)
+        total_prompt_tokens = sum(item.get("prompt_tokens") or 0 for item in usage_data)
+        total_completion_tokens = sum(item.get("completion_tokens") or 0 for item in usage_data)
+        total_tokens = sum(item.get("total_tokens") or 0 for item in usage_data)
+        total_cost = sum(item.get("cost") or 0 for item in usage_data)
 
         return {
             "total_prompt_tokens": total_prompt_tokens,
@@ -219,10 +219,10 @@ async def get_global_usage():
             )
             if usage_response.ok:
                 usage_data = usage_response.json()
-                total_prompt_tokens += sum(item.get("prompt_tokens", 0) for item in usage_data)
-                total_completion_tokens += sum(item.get("completion_tokens", 0) for item in usage_data)
-                total_tokens += sum(item.get("total_tokens", 0) for item in usage_data)
-                total_cost += sum(item.get("cost", 0) for item in usage_data)
+                total_prompt_tokens += sum(item.get("prompt_tokens") or 0 for item in usage_data)
+                total_completion_tokens += sum(item.get("completion_tokens") or 0 for item in usage_data)
+                total_tokens += sum(item.get("total_tokens") or 0 for item in usage_data)
+                total_cost += sum(item.get("cost") or 0 for item in usage_data)
                 total_requests += len(usage_data)
 
         return {
@@ -267,10 +267,10 @@ async def get_all_users_usage():
             )
             if usage_response.ok:
                 usage_data = usage_response.json()
-                prompt_tokens = sum(item.get("prompt_tokens", 0) for item in usage_data)
-                completion_tokens = sum(item.get("completion_tokens", 0) for item in usage_data)
-                total_tokens = sum(item.get("total_tokens", 0) for item in usage_data)
-                total_cost = sum(item.get("cost", 0) for item in usage_data)
+                prompt_tokens = sum(item.get("prompt_tokens") or 0 for item in usage_data)
+                completion_tokens = sum(item.get("completion_tokens") or 0 for item in usage_data)
+                total_tokens = sum(item.get("total_tokens") or 0 for item in usage_data)
+                total_cost = sum(item.get("cost") or 0 for item in usage_data)
 
                 users_usage.append({
                     "user_id": user["user_id"],
