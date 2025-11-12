@@ -1,5 +1,6 @@
 // State management
 let currentModel = null;
+let currentUser = null;
 let sessionMetrics = {
     promptTokens: 0,
     completionTokens: 0,
@@ -7,6 +8,7 @@ let sessionMetrics = {
 };
 
 // DOM elements
+const userSelect = document.getElementById('user-select');
 const modelSelect = document.getElementById('model-select');
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
@@ -20,6 +22,26 @@ const totalPromptTokens = document.getElementById('total-prompt-tokens');
 const totalCompletionTokens = document.getElementById('total-completion-tokens');
 const totalTokens = document.getElementById('total-tokens');
 const requestCount = document.getElementById('request-count');
+
+// Load available users on page load
+async function loadUsers() {
+    try {
+        const response = await fetch('/api/users');
+        const users = await response.json();
+
+        userSelect.innerHTML = '<option value="">-- Select a user --</option>';
+
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.user_id;
+            option.textContent = user.alias ? `${user.alias} (${user.user_id})` : user.user_id;
+            userSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load users:', error);
+        userSelect.innerHTML = '<option value="">Error loading users</option>';
+    }
+}
 
 // Load available models on page load
 async function loadModels() {
@@ -43,14 +65,16 @@ async function loadModels() {
 
 // Reset session (clear chat and metrics)
 function resetSession() {
-    chatMessages.innerHTML = '<div class="system-message">Session reset. Start chatting with the new model!</div>';
+    chatMessages.innerHTML = '<div class="system-message">Session reset. Start chatting!</div>';
     sessionMetrics = {
         promptTokens: 0,
         completionTokens: 0,
         totalTokens: 0
     };
     updateSessionMetrics();
-    fetchTotalUsage();
+    if (currentUser) {
+        fetchTotalUsage();
+    }
 }
 
 // Update session metrics display
@@ -62,8 +86,16 @@ function updateSessionMetrics() {
 
 // Fetch total usage from Gateway
 async function fetchTotalUsage() {
+    if (!currentUser) {
+        totalPromptTokens.textContent = '-';
+        totalCompletionTokens.textContent = '-';
+        totalTokens.textContent = '-';
+        requestCount.textContent = '-';
+        return;
+    }
+
     try {
-        const response = await fetch('/api/usage');
+        const response = await fetch(`/api/usage?user_id=${encodeURIComponent(currentUser)}`);
         const data = await response.json();
 
         totalPromptTokens.textContent = data.total_prompt_tokens;
@@ -102,7 +134,7 @@ function addMessage(content, type, tokens = null) {
 // Send message
 async function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || !currentModel) return;
+    if (!message || !currentModel || !currentUser) return;
 
     // Disable input while processing
     messageInput.disabled = true;
@@ -128,7 +160,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 provider: currentModel.provider,
                 model: currentModel.model,
-                message: message
+                message: message,
+                user_id: currentUser
             })
         });
 
@@ -170,17 +203,28 @@ async function sendMessage() {
 }
 
 // Event listeners
+userSelect.addEventListener('change', (e) => {
+    if (e.target.value) {
+        currentUser = e.target.value;
+        updateInputState();
+        resetSession();
+    } else {
+        currentUser = null;
+        updateInputState();
+    }
+});
+
 modelSelect.addEventListener('change', (e) => {
     if (e.target.value) {
         currentModel = JSON.parse(e.target.value);
-        messageInput.disabled = false;
-        sendButton.disabled = false;
+        updateInputState();
         resetSession();
-        messageInput.focus();
+        if (currentUser && currentModel) {
+            messageInput.focus();
+        }
     } else {
         currentModel = null;
-        messageInput.disabled = true;
-        sendButton.disabled = true;
+        updateInputState();
     }
 });
 
@@ -193,6 +237,18 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Update input state based on selections
+function updateInputState() {
+    if (currentUser && currentModel) {
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+    } else {
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+    }
+}
+
 // Initialize
+loadUsers();
 loadModels();
 fetchTotalUsage();
