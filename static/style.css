@@ -89,6 +89,30 @@ header p {
     font-size: 14px;
 }
 
+.no-users-message {
+    padding: 12px;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.no-users-message p {
+    margin: 0;
+    font-size: 14px;
+    color: #856404;
+}
+
+.no-users-message a {
+    color: #1e3a8a;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.no-users-message a:hover {
+    text-decoration: underline;
+}
+
 .metrics-panel {
     padding: 20px;
     background-color: #f9f9f9;

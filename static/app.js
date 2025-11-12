@@ -29,6 +29,18 @@ async function loadUsers() {
         const response = await fetch('/api/users');
         const users = await response.json();
 
+        // If no users exist, replace the select with a link to create users
+        if (users.length === 0) {
+            const userSelectorDiv = document.querySelector('.user-selector');
+            userSelectorDiv.innerHTML = `
+                <label>No users found</label>
+                <div class="no-users-message">
+                    <p>No users available. Please <a href="/dashboard#create-user">create a user</a> to get started.</p>
+                </div>
+            `;
+            return;
+        }
+
         userSelect.innerHTML = '<option value="">-- Select a user --</option>';
 
         users.forEach(user => {
