@@ -20,7 +20,7 @@
 }
 
 .nav-links a.active {
-    background: #007bff;
+    background: #1e3a8a;
     color: white;
 }
 
@@ -36,7 +36,7 @@
     margin-top: 0;
     margin-bottom: 1.5rem;
     color: #333;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid #1e3a8a;
     padding-bottom: 0.5rem;
 }
 
@@ -50,22 +50,22 @@
 
 .stat-card {
     padding: 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
     border-radius: 8px;
     color: white;
     text-align: center;
 }
 
 .stat-card:nth-child(2) {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #0c4a6e 0%, #0891b2 100%);
 }
 
 .stat-card:nth-child(3) {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #334155 0%, #64748b 100%);
 }
 
 .stat-card:nth-child(4) {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
 }
 
 .stat-label {
@@ -128,13 +128,13 @@
 
 .form-group input:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .btn-primary {
     padding: 0.75rem 1.5rem;
-    background: #007bff;
+    background: #1e3a8a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -144,7 +144,7 @@
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: #1e40af;
 }
 
 .btn-primary:disabled {

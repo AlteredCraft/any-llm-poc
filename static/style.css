@@ -20,7 +20,7 @@ body {
 }
 
 header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
     color: white;
     padding: 30px;
     text-align: center;
@@ -57,7 +57,7 @@ header p {
 
 .nav-links a.active {
     background: rgba(255, 255, 255, 0.9);
-    color: #667eea;
+    color: #1e3a8a;
 }
 
 .selector-container {
@@ -129,7 +129,7 @@ header p {
 
 .metric-value {
     font-weight: 600;
-    color: #667eea;
+    color: #1e3a8a;
 }
 
 .total-metrics {
@@ -159,7 +159,7 @@ header p {
 }
 
 .user-message {
-    background: #667eea;
+    background: #1e3a8a;
     color: white;
     margin-left: auto;
     text-align: right;
@@ -201,12 +201,12 @@ header p {
 
 #message-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3b82f6;
 }
 
 #send-button {
     padding: 12px 24px;
-    background: #667eea;
+    background: #1e3a8a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -216,7 +216,7 @@ header p {
 }
 
 #send-button:hover:not(:disabled) {
-    background: #5568d3;
+    background: #1e40af;
 }
 
 #send-button:disabled,
