@@ -1,5 +1,7 @@
 import os
+import json
 import logging
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -26,14 +28,40 @@ app = FastAPI(title="any-llm Direct Provider POC")
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Available models
-AVAILABLE_MODELS = [
-    {"provider": "gemini", "model": "gemini-2.5-flash-lite", "display": "Gemini 2.5 Flash Lite", "tools_support": True},
-    {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "tools_support": True},
-    {"provider": "anthropic", "model": "claude-sonnet-4-5", "display": "Claude 4.5 Sonnet", "tools_support": True},
-    {"provider": "anthropic", "model": "claude-haiku-4-5", "display": "Claude 4.5 Haiku", "tools_support": True},
-    {"provider": "ollama", "model": "llama3:latest", "display": "llama3:latest", "tools_support": False},
-]
+# Path to models config file
+MODELS_CONFIG_FILE = Path(__file__).parent / "models_config.json"
+
+# Global variable to store loaded models
+AVAILABLE_MODELS = []
+
+
+def load_models_config():
+    """Load models configuration from JSON file"""
+    global AVAILABLE_MODELS
+    try:
+        if not MODELS_CONFIG_FILE.exists():
+            logger.error(f"Models config file not found: {MODELS_CONFIG_FILE}")
+            AVAILABLE_MODELS = []
+            return
+
+        with open(MODELS_CONFIG_FILE, 'r') as f:
+            AVAILABLE_MODELS = json.load(f)
+        logger.info(f"Loaded {len(AVAILABLE_MODELS)} models from config file")
+    except Exception as e:
+        logger.error(f"Failed to load models config: {str(e)}")
+        AVAILABLE_MODELS = []
+
+
+def save_models_config(models: list):
+    """Save models configuration to JSON file"""
+    try:
+        with open(MODELS_CONFIG_FILE, 'w') as f:
+            json.dump(models, f, indent=2)
+        logger.info(f"Saved {len(models)} models to config file")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save models config: {str(e)}")
+        return False
 
 
 # Tool functions for any-llm
@@ -111,10 +139,24 @@ class ChatResponse(BaseModel):
     total_tokens: int
 
 
+class ModelConfig(BaseModel):
+    provider: str
+    model: str
+    display: str
+    tools_support: bool
+
+
+class ModelsConfigUpdate(BaseModel):
+    models: list[ModelConfig]
+
+
 @app.on_event("startup")
 async def startup_event():
     """Log application startup"""
     logger.info("Starting any-llm Direct Provider POC application")
+
+    # Load models from config file
+    load_models_config()
     logger.info(f"Available models: {len(AVAILABLE_MODELS)}")
 
     # Check for required API keys
@@ -194,6 +236,101 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Chat completion failed - model: {request.provider}:{request.model}, error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Chat completion failed: {str(e)}")
+
+
+@app.get("/dashboard")
+async def dashboard():
+    """Serve the models dashboard page"""
+    return FileResponse("static/dashboard.html")
+
+
+@app.get("/api/admin/models/config")
+async def get_models_config():
+    """Get current models configuration"""
+    return {"models": AVAILABLE_MODELS}
+
+
+@app.put("/api/admin/models/config")
+async def update_models_config(config: ModelsConfigUpdate):
+    """Update entire models configuration"""
+    try:
+        # Convert Pydantic models to dicts
+        models_data = [model.model_dump() for model in config.models]
+
+        # Save to file
+        if save_models_config(models_data):
+            # Reload into memory
+            load_models_config()
+            return {"success": True, "message": f"Updated {len(models_data)} models"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+    except Exception as e:
+        logger.error(f"Failed to update models config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/models/config")
+async def add_model(model: ModelConfig):
+    """Add a new model to configuration"""
+    try:
+        # Check if model already exists
+        model_dict = model.model_dump()
+        for existing in AVAILABLE_MODELS:
+            if existing["provider"] == model_dict["provider"] and existing["model"] == model_dict["model"]:
+                raise HTTPException(status_code=400, detail="Model already exists")
+
+        # Add model
+        models_data = AVAILABLE_MODELS.copy()
+        models_data.append(model_dict)
+
+        # Save and reload
+        if save_models_config(models_data):
+            load_models_config()
+            return {"success": True, "message": "Model added successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to add model: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/admin/models/config/{provider}/{model}")
+async def delete_model(provider: str, model: str):
+    """Delete a model from configuration"""
+    try:
+        # Find and remove model
+        models_data = [
+            m for m in AVAILABLE_MODELS
+            if not (m["provider"] == provider and m["model"] == model)
+        ]
+
+        if len(models_data) == len(AVAILABLE_MODELS):
+            raise HTTPException(status_code=404, detail="Model not found")
+
+        # Save and reload
+        if save_models_config(models_data):
+            load_models_config()
+            return {"success": True, "message": "Model deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete model: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/models/reload")
+async def reload_models():
+    """Reload models configuration from file"""
+    try:
+        load_models_config()
+        return {"success": True, "message": f"Reloaded {len(AVAILABLE_MODELS)} models"}
+    except Exception as e:
+        logger.error(f"Failed to reload models: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
