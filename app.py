@@ -92,10 +92,15 @@ AVAILABLE_TOOLS = [
 
 
 # Request/Response models
+class Message(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     provider: str
     model: str
-    message: str
+    messages: list[Message]
     tools_support: bool
 
 
@@ -148,11 +153,14 @@ async def chat(request: ChatRequest):
     """Handle chat completion requests with tool support"""
 
     try:
+        # Convert Pydantic Message models to dicts for any-llm
+        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+
         # Build acompletion kwargs based on tools_support
         completion_kwargs = {
             "provider": request.provider,
             "model": request.model,
-            "messages": [{"role": "user", "content": request.message}],
+            "messages": messages,
             "max_tokens": 2048,
         }
 

@@ -1,5 +1,6 @@
 // State management
 let currentModel = null;
+let conversationHistory = [];
 let sessionMetrics = {
     promptTokens: 0,
     completionTokens: 0,
@@ -81,6 +82,7 @@ async function loadTools() {
 // Reset session (clear chat and metrics)
 function resetSession() {
     chatMessages.innerHTML = '<div class="system-message">Session reset. Start chatting!</div>';
+    conversationHistory = [];
     sessionMetrics = {
         promptTokens: 0,
         completionTokens: 0,
@@ -125,7 +127,13 @@ async function sendMessage() {
     messageInput.disabled = true;
     sendButton.disabled = true;
 
-    // Add user message
+    // Add user message to conversation history
+    conversationHistory.push({
+        role: 'user',
+        content: message
+    });
+
+    // Add user message to UI
     addMessage(message, 'user');
     messageInput.value = '';
 
@@ -145,7 +153,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 provider: currentModel.provider,
                 model: currentModel.model,
-                message: message,
+                messages: conversationHistory,
                 tools_support: currentModel.tools_support
             })
         });
@@ -159,7 +167,13 @@ async function sendMessage() {
         // Remove loading indicator
         chatMessages.removeChild(loadingDiv);
 
-        // Add assistant response
+        // Add assistant response to conversation history
+        conversationHistory.push({
+            role: 'assistant',
+            content: data.response
+        });
+
+        // Add assistant response to UI
         addMessage(data.response, 'assistant', {
             prompt: data.prompt_tokens,
             completion: data.completion_tokens,
@@ -176,6 +190,8 @@ async function sendMessage() {
         console.error('Failed to send message:', error);
         chatMessages.removeChild(loadingDiv);
         addMessage('Error: Failed to get response from the model. Please try again.', 'system');
+        // Remove the user message from history since the request failed
+        conversationHistory.pop();
     } finally {
         // Re-enable input
         messageInput.disabled = false;
