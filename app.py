@@ -2,13 +2,13 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import Callable
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ValidationError
 from dotenv import load_dotenv
 from any_llm import acompletion
+from tools import AVAILABLE_TOOLS, TOOL_FUNCTIONS, execute_tool_call
 
 # Load environment variables
 load_dotenv()
@@ -63,67 +63,6 @@ def save_models_config(models: list):
     except Exception as e:
         logger.error(f"Failed to save models config: {str(e)}")
         return False
-
-
-# Tool functions for any-llm
-def get_weather(location: str, unit: str = "F") -> str:
-    """Get weather information for a location.
-
-    Args:
-        location: The city or location to get weather for
-        unit: Temperature unit, either 'C' or 'F'
-
-    Returns:
-        str: Weather information for the location
-    """
-    # Pseudo implementation - returns mock weather data
-    temp = 75 if unit == "F" else 24
-    return f"Weather in {location} is sunny and {temp}{unit}!"
-
-
-def divide(dividend: float, divisor: float) -> float:
-    """Divide two numbers.
-
-    Args:
-        dividend: The number to be divided
-        divisor: The number to divide by
-
-    Returns:
-        float: The result of dividend / divisor
-
-    Raises:
-        ValueError: If divisor is zero
-    """
-    if divisor == 0:
-        raise ValueError("Cannot divide by zero")
-    return dividend / divisor
-
-
-# List of available tools
-AVAILABLE_TOOLS = [
-    {
-        "name": "get_weather",
-        "description": "Get weather information for a location",
-        "parameters": {
-            "location": {"type": "string", "description": "The city or location to get weather for"},
-            "unit": {"type": "string", "description": "Temperature unit, either 'C' or 'F'", "default": "F"}
-        }
-    },
-    {
-        "name": "divide",
-        "description": "Divide two numbers",
-        "parameters": {
-            "dividend": {"type": "number", "description": "The number to be divided"},
-            "divisor": {"type": "number", "description": "The number to divide by"}
-        }
-    }
-]
-
-# Mapping of tool names to callable functions
-TOOL_FUNCTIONS: dict[str, Callable] = {
-    "get_weather": get_weather,
-    "divide": divide,
-}
 
 
 # Request/Response models
@@ -195,51 +134,6 @@ async def get_models():
 async def get_tools():
     """Return list of available tools"""
     return {"tools": AVAILABLE_TOOLS}
-
-
-def execute_tool_call(tool_call) -> dict:
-    """Execute a single tool call and return the result"""
-    try:
-        # Extract tool name and arguments from function attribute
-        tool_name = tool_call.function.name
-        # Parse arguments - they come as a JSON string
-        arguments = json.loads(tool_call.function.arguments) if isinstance(tool_call.function.arguments, str) else tool_call.function.arguments
-
-        logger.info(f"Executing tool: {tool_name} with arguments: {arguments}")
-
-        # Get the function
-        if tool_name not in TOOL_FUNCTIONS:
-            error_msg = f"Unknown tool: {tool_name}"
-            logger.error(error_msg)
-            return {
-                "tool_call_id": tool_call.id,
-                "role": "tool",
-                "name": tool_name,
-                "content": json.dumps({"error": error_msg})
-            }
-
-        # Execute the function
-        func = TOOL_FUNCTIONS[tool_name]
-        result = func(**arguments)
-
-        logger.info(f"Tool {tool_name} executed successfully: {result}")
-
-        # Return formatted tool result
-        return {
-            "tool_call_id": tool_call.id,
-            "role": "tool",
-            "name": tool_name,
-            "content": str(result)  # Convert result to string
-        }
-    except Exception as e:
-        error_msg = f"Error executing tool {getattr(tool_call.function, 'name', 'unknown')}: {str(e)}"
-        logger.error(error_msg)
-        return {
-            "tool_call_id": tool_call.id,
-            "role": "tool",
-            "name": getattr(tool_call.function, 'name', 'unknown'),
-            "content": json.dumps({"error": str(e)})
-        }
 
 
 @app.post("/api/chat", response_model=ChatResponse)
