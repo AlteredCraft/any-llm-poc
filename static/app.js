@@ -27,7 +27,7 @@ async function loadModels() {
 
         data.models.forEach(model => {
             const option = document.createElement('option');
-            option.value = JSON.stringify({ provider: model.provider, model: model.model });
+            option.value = JSON.stringify({ provider: model.provider, model: model.model, tools_support: model.tools_support });
             option.textContent = model.display;
             modelSelect.appendChild(option);
         });
@@ -145,7 +145,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 provider: currentModel.provider,
                 model: currentModel.model,
-                message: message
+                message: message,
+                tools_support: currentModel.tools_support
             })
         });
 

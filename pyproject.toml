@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 # Note, instead of all, you can specify specific models: https://mozilla-ai.github.io/any-llm/providers/
 dependencies = [
-    "any-llm-sdk[anthropic,gemini]>=1.2.0",
+    "any-llm-sdk[anthropic,gemini,ollama]>=1.2.0",
     "python-dotenv>=1.2.1",
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",

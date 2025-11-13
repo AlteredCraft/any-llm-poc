@@ -28,10 +28,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Available models
 AVAILABLE_MODELS = [
-    {"provider": "gemini", "model": "gemini-2.5-flash-lite", "display": "Gemini 2.5 Flash Lite"},
-    {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-5", "display": "Claude 4.5 Sonnet"},
-    {"provider": "anthropic", "model": "claude-haiku-4-5", "display": "Claude 4.5 Haiku"},
+    {"provider": "gemini", "model": "gemini-2.5-flash-lite", "display": "Gemini 2.5 Flash Lite", "tools_support": True},
+    {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "tools_support": True},
+    {"provider": "anthropic", "model": "claude-sonnet-4-5", "display": "Claude 4.5 Sonnet", "tools_support": True},
+    {"provider": "anthropic", "model": "claude-haiku-4-5", "display": "Claude 4.5 Haiku", "tools_support": True},
+    {"provider": "ollama", "model": "llama3:latest", "display": "llama3:latest", "tools_support": False},
 ]
 
 
@@ -95,6 +96,7 @@ class ChatRequest(BaseModel):
     provider: str
     model: str
     message: str
+    tools_support: bool
 
 
 class ChatResponse(BaseModel):
@@ -146,14 +148,20 @@ async def chat(request: ChatRequest):
     """Handle chat completion requests with tool support"""
 
     try:
-        # Call any-llm SDK via Gateway with tools
-        response = await acompletion(
-            provider=request.provider,
-            model=request.model,
-            messages=[{"role": "user", "content": request.message}],
-            max_tokens=2048,
-            tools=[get_weather, divide],  # Pass Python callables as tools
-        )
+        # Build acompletion kwargs based on tools_support
+        completion_kwargs = {
+            "provider": request.provider,
+            "model": request.model,
+            "messages": [{"role": "user", "content": request.message}],
+            "max_tokens": 2048,
+        }
+
+        # Only add tools if the model supports them
+        if request.tools_support:
+            completion_kwargs["tools"] = [get_weather, divide]
+
+        # Call any-llm SDK with conditional tool support
+        response = await acompletion(**completion_kwargs)
 
         # Extract response and token usage
         content = response.choices[0].message.content
