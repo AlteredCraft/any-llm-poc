@@ -2,6 +2,10 @@
 
 A simple web application demonstrating the [any-llm](https://github.com/mozilla-ai/any-llm) SDK's ability to switch between different LLM providers (Anthropic, Gemini) with direct provider calls.
 
+> **This is the companion app for this Altered Craft article: [Testing Mozilla's any-llm: A Practical Take on Provider Abstraction](https://alteredcraft.com/p/testing-mozillas-any-llm-a-practical)**
+
+![alt text](docs/screen-shot.png)
+
 ## Features
 
 - **Model Selection**: Choose between different LLM providers (Gemini, Claude)
@@ -12,9 +16,8 @@ A simple web application demonstrating the [any-llm](https://github.com/mozilla-
 ## Prerequisites
 
 - **Python 3.13+** with [uv](https://github.com/astral-sh/uv) installed
-- **Provider API Keys**:
-  - [Anthropic API Key](https://console.anthropic.com/) for Claude models
-  - [Google API Key](https://aistudio.google.com/app/apikey) for Gemini models
+- **Provider API Keys**: Any of your choosing which are [supported by Any-llm](https://mozilla-ai.github.io/any-llm/providers/)
+
 
 ## Setup
 
@@ -26,6 +29,7 @@ A simple web application demonstrating the [any-llm](https://github.com/mozilla-
    ```
 
 3. **Edit `.env` and add your API keys**:
+see: https://mozilla-ai.github.io/any-llm/providers/ for KEY names
    ```
    ANTHROPIC_API_KEY=your_anthropic_key_here
    GOOGLE_API_KEY=your_google_key_here
@@ -50,11 +54,11 @@ Or use the built-in runner:
 uv run python app.py
 ```
 
-The application will be available at: **http://localhost:8080**
+The application will be available at: **http://localhost:8000**
 
 ## Usage
 
-1. Open your browser to `http://localhost:8080`
+1. Open your browser to `http://localhost:8000`
 2. Select a model from the dropdown
 3. Start chatting!
 4. Watch the token metrics update after each response
@@ -74,19 +78,7 @@ The application will be available at: **http://localhost:8080**
 
 ## Customization
 
-To add or modify available models, edit the `AVAILABLE_MODELS` list in `app.py`:
+![alt text](docs/models-config.png)
 
-```python
-AVAILABLE_MODELS = [
-    {"provider": "gemini", "model": "gemini-2.5-flash-lite", "display": "Gemini 2.5 Flash Lite"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-5", "display": "Claude 4.5 Sonnet"},
-    # Add more models here
-]
-```
+To add or modify available models, navigate to http://localhost:8000/dashboard or edit `models_config.json` directly
 
-## What This Demonstrates
-
-- How any-llm SDK abstracts away provider differences
-- Simple integration patterns for web applications
-- Direct provider calls without a proxy layer
-- Real-time token usage tracking
