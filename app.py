@@ -136,6 +136,105 @@ async def get_tools():
     return {"tools": AVAILABLE_TOOLS}
 
 
+# Helper functions for chat endpoint
+
+def _extract_tokens(usage) -> dict:
+    """Safely extract token counts from usage object with None handling"""
+    if not usage:
+        return {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+    return {
+        'prompt_tokens': getattr(usage, 'prompt_tokens', 0) or 0,
+        'completion_tokens': getattr(usage, 'completion_tokens', 0) or 0,
+        'total_tokens': getattr(usage, 'total_tokens', 0) or 0,
+    }
+
+
+def _serialize_tool_calls(tool_calls) -> list[dict]:
+    """Convert tool_call objects to API-compatible dicts"""
+    return [
+        {
+            "id": tc.id,
+            "type": "function",
+            "function": {
+                "name": tc.function.name,
+                "arguments": tc.function.arguments
+            }
+        }
+        for tc in tool_calls
+    ]
+
+
+async def _handle_tool_calls(
+    message,
+    messages: list,
+    completion_kwargs: dict,
+    initial_tokens: dict
+) -> tuple[str, dict]:
+    """
+    Execute tool calls and get final LLM response with accumulated tokens.
+
+    Args:
+        message: The assistant message containing tool calls
+        messages: The conversation history
+        completion_kwargs: The completion API kwargs
+        initial_tokens: Token counts from the initial LLM call
+
+    Returns:
+        Tuple of (final_content, accumulated_tokens)
+    """
+    logger.info(f"Tool calls detected: {len(message.tool_calls)} tool(s)")
+
+    # Execute all tool calls
+    tool_results = []
+    for tool_call in message.tool_calls:
+        tool_result = execute_tool_call(tool_call)
+        tool_results.append(tool_result)
+
+    # Add assistant's message with tool calls to conversation
+    tool_calls_dicts = _serialize_tool_calls(message.tool_calls)
+    messages.append({
+        "role": "assistant",
+        "content": message.content or "",  # Handle None content from tool calls
+        "tool_calls": tool_calls_dicts
+    })
+
+    # Add tool results to conversation
+    messages.extend(tool_results)
+
+    # Call LLM again with tool results to get final response
+    logger.info("Calling LLM with tool results")
+    completion_kwargs["messages"] = messages
+
+    # Debug logging to inspect message structure
+    logger.debug(f"Sending messages with tool results: {json.dumps(messages, default=str)}")
+
+    try:
+        final_response = await acompletion(**completion_kwargs)
+    except ValidationError as e:
+        logger.error(f"Validation error in tool result completion: {e}")
+        # Return error message with initial tokens
+        return (
+            f"Error processing tool results: {str(e)}",
+            initial_tokens
+        )
+
+    # Extract final response
+    final_message = final_response.choices[0].message
+    final_content = final_message.content or ""
+    final_usage = final_response.usage
+
+    # Accumulate tokens
+    final_tokens = _extract_tokens(final_usage)
+    accumulated_tokens = {
+        'prompt_tokens': initial_tokens['prompt_tokens'] + final_tokens['prompt_tokens'],
+        'completion_tokens': initial_tokens['completion_tokens'] + final_tokens['completion_tokens'],
+        'total_tokens': initial_tokens['total_tokens'] + final_tokens['total_tokens'],
+    }
+
+    logger.info(f"Tool calling flow completed successfully")
+    return final_content, accumulated_tokens
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Handle chat completion requests with tool support"""
@@ -165,74 +264,14 @@ async def chat(request: ChatRequest):
         content = message.content
         usage = response.usage
 
-        # Track total tokens across all API calls (handle None values defensively)
-        total_prompt_tokens = getattr(usage, 'prompt_tokens', 0) or 0 if usage else 0
-        total_completion_tokens = getattr(usage, 'completion_tokens', 0) or 0 if usage else 0
-        total_tokens = getattr(usage, 'total_tokens', 0) or 0 if usage else 0
+        # Extract tokens from initial response
+        tokens = _extract_tokens(usage)
 
         # Handle tool calls - execute tools and get final response
         if message.tool_calls:
-            logger.info(f"Tool calls detected: {len(message.tool_calls)} tool(s)")
-
-            # Execute all tool calls
-            tool_results = []
-            for tool_call in message.tool_calls:
-                tool_result = execute_tool_call(tool_call)
-                tool_results.append(tool_result)
-
-            # Add assistant's message with tool calls to conversation
-            # Convert tool_calls objects to dicts for API
-            tool_calls_dicts = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments
-                    }
-                }
-                for tc in message.tool_calls
-            ]
-            messages.append({
-                "role": "assistant",
-                "content": content or "",  # Handle None content from tool calls
-                "tool_calls": tool_calls_dicts
-            })
-
-            # Add tool results to conversation
-            messages.extend(tool_results)
-
-            # Call LLM again with tool results to get final response
-            logger.info("Calling LLM with tool results")
-            completion_kwargs["messages"] = messages
-
-            # Debug logging to inspect message structure
-            logger.debug(f"Sending messages with tool results: {json.dumps(messages, default=str)}")
-
-            try:
-                final_response = await acompletion(**completion_kwargs)
-            except ValidationError as e:
-                logger.error(f"Validation error in tool result completion: {e}")
-                # Return error message to user instead of failing
-                return ChatResponse(
-                    response=f"Error processing tool results: {str(e)}",
-                    prompt_tokens=total_prompt_tokens,
-                    completion_tokens=total_completion_tokens,
-                    total_tokens=total_tokens,
-                )
-
-            # Extract final response
-            final_message = final_response.choices[0].message
-            content = final_message.content or ""
-            final_usage = final_response.usage
-
-            # Accumulate tokens (handle None values defensively)
-            if final_usage:
-                total_prompt_tokens += getattr(final_usage, 'prompt_tokens', 0) or 0
-                total_completion_tokens += getattr(final_usage, 'completion_tokens', 0) or 0
-                total_tokens += getattr(final_usage, 'total_tokens', 0) or 0
-
-            logger.info(f"Tool calling flow completed successfully")
+            content, tokens = await _handle_tool_calls(
+                message, messages, completion_kwargs, tokens
+            )
         elif content is None:
             # Fallback for unexpected None content
             content = ""
@@ -240,15 +279,15 @@ async def chat(request: ChatRequest):
 
         logger.info(
             f"Chat completion successful - "
-            f"tokens: {total_tokens} (prompt: {total_prompt_tokens}, "
-            f"completion: {total_completion_tokens})"
+            f"tokens: {tokens['total_tokens']} (prompt: {tokens['prompt_tokens']}, "
+            f"completion: {tokens['completion_tokens']})"
         )
 
         return ChatResponse(
             response=content,
-            prompt_tokens=total_prompt_tokens,
-            completion_tokens=total_completion_tokens,
-            total_tokens=total_tokens,
+            prompt_tokens=tokens['prompt_tokens'],
+            completion_tokens=tokens['completion_tokens'],
+            total_tokens=tokens['total_tokens'],
         )
 
     except AttributeError as e:
