@@ -28,5 +28,11 @@
     "model": "llama3:latest",
     "display": "llama3:latest",
     "tools_support": false
+  },
+  {
+    "provider": "ollama",
+    "model": "codestral:latest",
+    "display": "codestral:latest",
+    "tools_support": false
   }
 ]

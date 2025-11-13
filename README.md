@@ -1,4 +1,4 @@
-# any-llm Direct Provider POC
+# any-llm Reseach POC
 
 A simple web application demonstrating the [any-llm](https://github.com/mozilla-ai/any-llm) SDK's ability to switch between different LLM providers (Anthropic, Gemini) with direct provider calls.
 
