@@ -79,6 +79,24 @@ async function loadTools() {
     }
 }
 
+// Update tools display based on current model's tools support
+function updateToolsDisplay() {
+    const toolsList = document.getElementById('tools-list');
+
+    if (!currentModel) {
+        toolsList.innerHTML = '<div class="system-message">Select a model to see available tools</div>';
+        return;
+    }
+
+    if (!currentModel.tools_support) {
+        toolsList.innerHTML = '<div class="system-message" style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; color: #856404;">Tools are not supported for this model</div>';
+        return;
+    }
+
+    // If tools are supported, load and display them
+    loadTools();
+}
+
 // Reset session (clear chat and metrics)
 function resetSession() {
     chatMessages.innerHTML = '<div class="system-message">Session reset. Start chatting!</div>';
@@ -205,11 +223,13 @@ modelSelect.addEventListener('change', (e) => {
     if (e.target.value) {
         currentModel = JSON.parse(e.target.value);
         updateInputState();
+        updateToolsDisplay();
         resetSession();
         messageInput.focus();
     } else {
         currentModel = null;
         updateInputState();
+        updateToolsDisplay();
     }
 });
 
@@ -235,5 +255,5 @@ function updateInputState() {
 
 // Initialize
 loadModels();
-loadTools();
+updateToolsDisplay();
 
