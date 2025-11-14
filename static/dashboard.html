@@ -328,6 +328,105 @@
             background: rgba(255, 255, 255, 0.9);
             color: #1e3a8a;
         }
+
+        .management-card {
+            background: white;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .management-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+
+        .management-header h2 {
+            color: white;
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+
+        .management-header p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .management-content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .section-description {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0 0 15px 0;
+            line-height: 1.5;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .action-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .action-card h3 {
+            font-size: 14px;
+            margin: 0 0 4px 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .action-card p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 25px 0;
+        }
     </style>
 </head>
 <body>
@@ -339,27 +438,88 @@
                 <a href="/">Chat</a>
                 <a href="/dashboard" class="active">Models Dashboard</a>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="openAddModal()">Add New Model</button>
-                <button class="btn btn-secondary" onclick="reloadConfig()">Reload from File</button>
-                <button class="btn btn-warning" onclick="exportConfig()">Export Config</button>
-            </div>
         </div>
 
-        <div class="card">
-            <h2>Discover Models from Providers</h2>
-            <p style="color: #666; margin-bottom: 15px;">Automatically fetch available models from your providers</p>
-            <div class="form-group">
-                <label for="discovery-provider">Select Provider:</label>
-                <select id="discovery-provider">
-                    <option value="">-- Select a provider --</option>
-                    <option value="ollama">Ollama</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="gemini">Gemini</option>
-                </select>
+        <div class="management-card">
+            <div class="management-header">
+                <h2>Model Management</h2>
+                <p>Add new models manually, discover from providers, or manage your configuration</p>
             </div>
-            <div class="form-actions">
-                <button class="btn btn-primary" id="discover-btn" onclick="discoverModels()" disabled>Discover Models</button>
+
+            <div class="management-content">
+                <!-- Add Model Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h3 class="section-title">Add Model</h3>
+                    </div>
+                    <p class="section-description">
+                        Manually configure a new model with custom settings
+                    </p>
+                    <div class="quick-actions">
+                        <div class="action-card" onclick="openAddModal()">
+                            <h3>Add New Model</h3>
+                            <p>Configure provider, model ID, and settings</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Discover Models Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h3 class="section-title">Discover Models</h3>
+                    </div>
+                    <p class="section-description">
+                        Automatically fetch and add available models from your configured providers
+                    </p>
+
+                    <div class="form-group">
+                        <label for="discovery-provider">Select Provider:</label>
+                        <select id="discovery-provider">
+                            <option value="">-- Select a provider --</option>
+                            <option value="ollama">Ollama</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="gemini">Gemini</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="discover-btn" onclick="discoverModels()" disabled>
+                            Discover Models
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Configuration Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h3 class="section-title">Configuration</h3>
+                    </div>
+                    <p class="section-description">
+                        Manage your models configuration file - reload from disk or export your current settings
+                    </p>
+
+                    <div class="quick-actions">
+                        <div class="action-card" onclick="reloadConfig()">
+                            <h3>Reload from File</h3>
+                            <p>Load models from models_config.json</p>
+                        </div>
+                        <div class="action-card" onclick="exportConfig()">
+                            <h3>Export Config</h3>
+                            <p>Download current configuration</p>
+                        </div>
+                    </div>
+
+                    <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px; margin-top: 15px;">
+                        <strong style="color: #92400e;">Note:</strong>
+                        <span style="color: #78350f; font-size: 14px;">
+                            Reloading from file will replace your current in-memory configuration.
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
