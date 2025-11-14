@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from dotenv import load_dotenv
 from any_llm import acompletion
 from tools import AVAILABLE_TOOLS, TOOL_FUNCTIONS, execute_tool_call
+from provider_discovery import ProviderDiscoveryService
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +35,9 @@ MODELS_CONFIG_FILE = Path(__file__).parent / "models_config.json"
 
 # Global variable to store loaded models
 AVAILABLE_MODELS = []
+
+# Provider discovery service
+provider_discovery = ProviderDiscoveryService()
 
 
 def load_models_config():
@@ -391,6 +395,50 @@ async def reload_models():
     except Exception as e:
         logger.error(f"Failed to reload models: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/providers/{provider}/discover")
+async def discover_provider_models(provider: str):
+    """
+    Discover available models from a specific provider
+
+    Args:
+        provider: Provider name (ollama, anthropic, gemini)
+
+    Returns:
+        List of available models with their metadata
+    """
+    try:
+        models = await provider_discovery.discover_models(provider)
+        models_data = [model.to_dict() for model in models]
+        logger.info(f"Discovered {len(models_data)} models from {provider}")
+        return {
+            "provider": provider,
+            "models": models_data,
+            "count": len(models_data)
+        }
+    except ValueError as e:
+        # Unsupported provider
+        logger.warning(f"Unsupported provider requested: {provider}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except NotImplementedError as e:
+        # Provider discovery not yet implemented
+        logger.info(f"Provider discovery not implemented: {provider}")
+        raise HTTPException(status_code=501, detail=str(e))
+    except Exception as e:
+        # Other errors (connection issues, etc.)
+        logger.error(f"Failed to discover models from {provider}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/providers")
+async def get_supported_providers():
+    """Get list of providers that support model discovery"""
+    providers = provider_discovery.get_supported_providers()
+    return {
+        "providers": providers,
+        "count": len(providers)
+    }
 
 
 if __name__ == "__main__":

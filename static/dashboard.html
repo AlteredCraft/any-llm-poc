@@ -347,6 +347,23 @@
         </div>
 
         <div class="card">
+            <h2>Discover Models from Providers</h2>
+            <p style="color: #666; margin-bottom: 15px;">Automatically fetch available models from your providers</p>
+            <div class="form-group">
+                <label for="discovery-provider">Select Provider:</label>
+                <select id="discovery-provider">
+                    <option value="">-- Select a provider --</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="anthropic">Anthropic (Coming Soon)</option>
+                    <option value="gemini">Gemini (Coming Soon)</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="discover-btn" onclick="discoverModels()" disabled>Discover Models</button>
+            </div>
+        </div>
+
+        <div class="card">
             <div id="alert" class="alert"></div>
 
             <h2>Available Models</h2>
@@ -397,6 +414,24 @@
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Discovered Models Modal -->
+    <div id="discoveryModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 id="discoveryModalTitle">Discovered Models</h2>
+                <button class="close-btn" onclick="closeDiscoveryModal()">&times;</button>
+            </div>
+
+            <div id="discoveryContent">
+                <div class="empty-state">No models discovered</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDiscoveryModal()">Close</button>
+            </div>
         </div>
     </div>
 
