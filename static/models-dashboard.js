@@ -4,6 +4,11 @@ let discoveredModels = [];
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Bootstrap modals
+    if (typeof bootstrap !== 'undefined') {
+        modelModal = new bootstrap.Modal(document.getElementById('modelModal'));
+        discoveryModal = new bootstrap.Modal(document.getElementById('discoveryModal'));
+    }
     loadModels();
     initializeDiscoverySelect();
 });
@@ -25,35 +30,39 @@ function renderModelsTable() {
     const container = document.getElementById('modelsTable');
 
     if (models.length === 0) {
-        container.innerHTML = '<div class="empty-state">No models configured. Click "Add New Model" to get started.</div>';
+        container.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No models configured. Click "Add New Model" to get started.</p></div>';
         return;
     }
 
     const table = `
-        <table>
-            <thead>
-                <tr>
-                    <th>Provider</th>
-                    <th>Model ID</th>
-                    <th>Display Name</th>
-                    <th>Tools Support</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${models.map(model => `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
                     <tr>
-                        <td><span class="provider-badge provider-${model.provider}">${model.provider}</span></td>
-                        <td><code>${model.model}</code></td>
-                        <td>${model.display}</td>
-                        <td><span class="badge badge-${model.tools_support ? 'yes' : 'no'}">${model.tools_support ? 'Yes' : 'No'}</span></td>
-                        <td>
-                            <button class="btn btn-danger" onclick="deleteModel('${model.provider}', '${model.model}')">Delete</button>
-                        </td>
+                        <th>Provider</th>
+                        <th>Model ID</th>
+                        <th>Display Name</th>
+                        <th>Tools Support</th>
+                        <th>Actions</th>
                     </tr>
-                `).join('')}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    ${models.map(model => `
+                        <tr>
+                            <td><span class="provider-badge provider-${model.provider}">${model.provider}</span></td>
+                            <td><code>${model.model}</code></td>
+                            <td>${model.display}</td>
+                            <td><span class="badge badge-${model.tools_support ? 'yes' : 'no'}">${model.tools_support ? 'Yes' : 'No'}</span></td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteModel('${model.provider}', '${model.model}')">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
     `;
 
     container.innerHTML = table;
@@ -62,24 +71,34 @@ function renderModelsTable() {
 // Show alert message
 function showAlert(message, type = 'success') {
     const alert = document.getElementById('alert');
-    alert.className = `alert alert-${type} active`;
-    alert.textContent = message;
+    const alertContent = document.getElementById('alert-content');
+    alert.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alert.style.display = 'block';
+    alertContent.textContent = message;
 
     setTimeout(() => {
-        alert.className = 'alert';
+        alert.style.display = 'none';
     }, 5000);
 }
 
+// Bootstrap modal instances
+let modelModal;
+let discoveryModal;
+
 // Open add modal
 function openAddModal() {
-    document.getElementById('modalTitle').textContent = 'Add New Model';
+    document.getElementById('modalTitle').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Add New Model';
     document.getElementById('modelForm').reset();
-    document.getElementById('modelModal').classList.add('active');
+    if (modelModal) {
+        modelModal.show();
+    }
 }
 
 // Close modal
 function closeModal() {
-    document.getElementById('modelModal').classList.remove('active');
+    if (modelModal) {
+        modelModal.hide();
+    }
     document.getElementById('modelForm').reset();
 }
 
@@ -178,20 +197,7 @@ function exportConfig() {
     showAlert('Configuration exported successfully', 'success');
 }
 
-// Close modal when clicking outside
-document.getElementById('modelModal').addEventListener('click', (event) => {
-    if (event.target.id === 'modelModal') {
-        closeModal();
-    }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        closeModal();
-        closeDiscoveryModal();
-    }
-});
+// Bootstrap handles modal closing with backdrop click and Escape key automatically
 
 // ========== Model Discovery Functions ==========
 
@@ -254,17 +260,17 @@ function openDiscoveryModal(provider) {
     title.textContent = `Discovered Models from ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
 
     if (discoveredModels.length === 0) {
-        content.innerHTML = '<div class="empty-state">No models discovered</div>';
+        content.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No models discovered</p></div>';
     } else {
         content.innerHTML = `
-            <p style="margin-bottom: 15px; color: #666;">
-                Found ${discoveredModels.length} models. Select the ones you want to add to your configuration:
+            <p class="text-muted mb-3">
+                Found <strong>${discoveredModels.length}</strong> models. Select the ones you want to add to your configuration:
             </p>
-            <div style="max-height: 400px; overflow-y: auto;">
-                <table>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Select</th>
+                            <th style="width: 60px;">Select</th>
                             <th>Model Name</th>
                             <th>Display Name</th>
                             <th>Tools Support</th>
@@ -274,7 +280,7 @@ function openDiscoveryModal(provider) {
                         ${discoveredModels.map((model, index) => `
                             <tr>
                                 <td>
-                                    <input type="checkbox" id="model-${index}" data-index="${index}"
+                                    <input type="checkbox" class="form-check-input" id="model-${index}" data-index="${index}"
                                            ${isModelAlreadyAdded(model) ? 'disabled checked' : ''}>
                                 </td>
                                 <td><code>${model.model}</code></td>
@@ -285,20 +291,26 @@ function openDiscoveryModal(provider) {
                     </tbody>
                 </table>
             </div>
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="addSelectedModels()">Add Selected Models</button>
-                <button class="btn btn-secondary" onclick="selectAllDiscovered()">Select All</button>
-                <button class="btn btn-secondary" onclick="deselectAllDiscovered()">Deselect All</button>
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary" onclick="addSelectedModels()">
+                    <i class="bi bi-plus-lg me-2"></i>Add Selected Models
+                </button>
+                <button class="btn btn-outline-secondary" onclick="selectAllDiscovered()">Select All</button>
+                <button class="btn btn-outline-secondary" onclick="deselectAllDiscovered()">Deselect All</button>
             </div>
         `;
     }
 
-    modal.classList.add('active');
+    if (discoveryModal) {
+        discoveryModal.show();
+    }
 }
 
 // Close discovery modal
 function closeDiscoveryModal() {
-    document.getElementById('discoveryModal').classList.remove('active');
+    if (discoveryModal) {
+        discoveryModal.hide();
+    }
     discoveredModels = [];
 }
 
@@ -382,9 +394,4 @@ async function addSelectedModels() {
     }
 }
 
-// Close discovery modal when clicking outside
-document.getElementById('discoveryModal').addEventListener('click', (event) => {
-    if (event.target.id === 'discoveryModal') {
-        closeDiscoveryModal();
-    }
-});
+// Bootstrap handles discovery modal closing automatically

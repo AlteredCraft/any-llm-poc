@@ -3,71 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>any-llm Reseach POC</title>
+    <title>any-llm Research POC</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>any-llm Reseach POC</h1>
-            <p>Choose a model to start chatting!</p>
-            <div class="nav-links">
-                <a href="/" class="active">Chat</a>
-                <a href="/dashboard">Models Dashboard</a>
-            </div>
-        </header>
-
-        <div class="selector-container">
-            <div class="model-selector">
-                <label for="model-select">Select Model:</label>
-                <select id="model-select">
-                    <option value="">Loading models...</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="tools-panel">
-            <h3>Available Tools</h3>
-            <div id="tools-list" class="tools-list">
-                <div class="system-message">Loading tools...</div>
+<body class="bg-light">
+    <!-- Header -->
+    <header class="bg-gradient-primary text-white py-4 shadow-sm">
+        <div class="container">
+            <div class="text-center">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-chat-dots-fill me-2"></i>any-llm Research POC
+                </h1>
+                <p class="lead mb-3">Choose a model to start chatting!</p>
+                <nav class="nav nav-pills justify-content-center">
+                    <a href="/" class="nav-link active">
+                        <i class="bi bi-chat-square-text me-1"></i>Chat
+                    </a>
+                    <a href="/dashboard" class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-1"></i>Models Dashboard
+                    </a>
+                </nav>
             </div>
         </div>
+    </header>
 
-        <div class="metrics-panel">
-            <h3>Session Metrics</h3>
-            <div class="metrics-grid">
-                <div class="metric">
-                    <span class="metric-label">Prompt Tokens:</span>
-                    <span class="metric-value" id="session-prompt-tokens">0</span>
+    <!-- Main Content -->
+    <div class="container my-4">
+        <div class="row g-4">
+            <!-- Left Column: Model Selector, Tools, Metrics -->
+            <div class="col-lg-4">
+                <!-- Model Selector Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-cpu text-primary me-2"></i>Model Selection
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <label for="model-select" class="form-label fw-semibold">Select Model:</label>
+                        <select id="model-select" class="form-select">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Completion Tokens:</span>
-                    <span class="metric-value" id="session-completion-tokens">0</span>
+
+                <!-- Tools Panel Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-tools text-primary me-2"></i>Available Tools
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="tools-list" class="tools-list">
+                            <div class="text-muted text-center fst-italic">Loading tools...</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Total Tokens:</span>
-                    <span class="metric-value" id="session-total-tokens">0</span>
+
+                <!-- Session Metrics Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-graph-up text-primary me-2"></i>Session Metrics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-secondary">
+                                    <i class="bi bi-arrow-up-circle me-2"></i>Prompt Tokens:
+                                </span>
+                                <span class="badge bg-primary fs-6" id="session-prompt-tokens">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-secondary">
+                                    <i class="bi bi-arrow-down-circle me-2"></i>Completion Tokens:
+                                </span>
+                                <span class="badge bg-success fs-6" id="session-completion-tokens">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-secondary">
+                                    <i class="bi bi-calculator me-2"></i>Total Tokens:
+                                </span>
+                                <span class="badge bg-info fs-6" id="session-total-tokens">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="chat-container">
-            <div id="chat-messages" class="chat-messages">
-                <div class="system-message">Select a model to start chatting...</div>
-            </div>
-
-            <div class="input-container">
-                <input
-                    type="text"
-                    id="message-input"
-                    placeholder="Type your message..."
-                    disabled
-                >
-                <button id="send-button" disabled>Send</button>
+            <!-- Right Column: Chat -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 chat-card">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-chat-left-text text-primary me-2"></i>Conversation
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="chat-messages" class="chat-messages p-4">
+                            <div class="text-center text-muted fst-italic">Select a model to start chatting...</div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="message-input"
+                                class="form-control border-0 bg-light"
+                                placeholder="Type your message..."
+                                disabled
+                            >
+                            <button id="send-button" class="btn btn-primary px-4" disabled>
+                                <i class="bi bi-send-fill me-2"></i>Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>
