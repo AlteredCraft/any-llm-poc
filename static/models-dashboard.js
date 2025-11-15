@@ -395,3 +395,21 @@ async function addSelectedModels() {
 }
 
 // Bootstrap handles discovery modal closing automatically
+
+// Toggle models list expansion
+function toggleModelsList() {
+    const container = document.getElementById('modelsTableContainer');
+    const btn = document.getElementById('toggleListBtn');
+
+    if (container.classList.contains('collapsed')) {
+        container.classList.remove('collapsed');
+        container.classList.add('expanded');
+        btn.innerHTML = '<i class="bi bi-arrows-collapse me-1"></i>Collapse';
+    } else {
+        container.classList.remove('expanded');
+        container.classList.add('collapsed');
+        btn.innerHTML = '<i class="bi bi-arrows-expand me-1"></i>Expand';
+        // Scroll the Available Models card into view when collapsing
+        document.querySelector('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}

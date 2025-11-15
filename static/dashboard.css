@@ -186,6 +186,39 @@ header .nav-link.active {
     height: 3rem;
 }
 
+/* Models table container with scrolling */
+.models-table-container {
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+}
+
+.models-table-container.collapsed {
+    max-height: 400px;
+}
+
+.models-table-container.expanded {
+    max-height: none;
+}
+
+/* Scrollbar styling */
+.models-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.models-table-container::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 4px;
+}
+
+.models-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.models-table-container::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     header .display-5 {
