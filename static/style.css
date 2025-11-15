@@ -76,6 +76,12 @@ header .nav-link.active {
     animation: fadeIn 0.3s ease-in;
 }
 
+.message-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
